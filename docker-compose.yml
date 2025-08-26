@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # Report MCP Server - DA-agent tools as HTTP MCP server
+  report-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: report-mcp-server
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./mcp_tools:/app/mcp_tools
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

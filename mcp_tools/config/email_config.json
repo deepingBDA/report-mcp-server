@@ -1,0 +1,16 @@
+{
+  "smtp": {
+    "host": "smtp-mail.outlook.com",
+    "port": 587,
+    "user": "your-email@outlook.com",
+    "password": "your-app-password"
+  },
+  "email": {
+    "to": ["recipient@company.com"],
+    "cc": [],
+    "subject_prefix": "[일일 리포트]"
+  },
+  "report": {
+    "default_html_path": "/app/mcp_tools/html_report/daily/latest.html"
+  }
+}
