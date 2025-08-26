@@ -1,0 +1,23 @@
+# FastAPI Core
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-multipart>=0.0.6
+
+# LLM & AI (DA-agent 호환)
+langchain-openai>=0.1.0
+langgraph>=0.2.0
+openai>=1.0.0
+fastmcp>=0.2.0
+
+# Database (DA-agent 호환)
+clickhouse-driver>=0.2.0
+paramiko>=3.0.0
+
+# Utils (DA-agent 호환)  
+python-dotenv>=1.0.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+pandas>=2.0.0
+numpy>=1.24.0
