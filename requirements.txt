@@ -12,7 +12,7 @@ openai>=1.0.0
 fastmcp>=0.2.0
 
 # Database (DA-agent 호환)
-clickhouse-driver>=0.2.0
+clickhouse-connect>=0.6.0
 paramiko>=3.0.0
 
 # Utils (DA-agent 호환)  
