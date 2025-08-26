@@ -748,8 +748,7 @@ async def list_mcp_tools():
         "count": len(tools),
         "server_info": {
             "name": "report-mcp-server",
-            "version": "3.0.0",
-            "type": "simple_fastapi"
+            "version": "3.0.0"
         }
     }
 
@@ -761,7 +760,6 @@ async def mcp_health():
     
     return {
         "status": "healthy",
-        "server_type": "simple_fastapi",
         "version": "3.0.0", 
         "tools_count": tool_count,
         "capabilities": ["tool_discovery", "direct_rest_api", "openapi_schema"]
