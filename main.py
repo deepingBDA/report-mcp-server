@@ -710,10 +710,10 @@ async def visitor_summary_html(request: VisitorSummaryRequest):
         
         # Run the workflow
         result = workflow.run(
-            spec=request.spec or "SPEC_VISITOR",
+            spec=request.spec or "visitor",
             end_date=request.end_date,
             stores=stores_list,
-            periods=request.periods or [1],
+            periods=(request.periods[0] if request.periods else 1),
             user_prompt=request.user_prompt or "방문 현황 요약 통계(HTML)"
         )
         
