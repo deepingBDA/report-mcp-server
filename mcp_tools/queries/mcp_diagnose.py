@@ -1,4 +1,5 @@
-from fastmcp import FastMCP
+from fastapi import HTTPException
+from pydantic import BaseModel, Field
 import clickhouse_connect
 import os
 from dotenv import load_dotenv
@@ -46,26 +47,33 @@ logger.setLevel(logging.DEBUG)
 logger.info("MCP 진단 서버 시작")
 logger.info(f"=== 새 세션 시작: {time.strftime('%Y-%m-%d %H:%M:%S')} ===")
 
-# 환경 변수 설정
-os.environ["FASTMCP_DEBUG"] = "1"
-os.environ["FASTMCP_LOG_LEVEL"] = "DEBUG"
+# Request models
+class SiteRequest(BaseModel):
+    site: str = Field(description="매장명")
 
-# 토큰 관련 함수들은 mcp_utils로 이동됨
+class DateRangeRequest(BaseModel):
+    start_date: str = Field(description="시작 날짜 (YYYY-MM-DD)")
+    end_date: str = Field(description="종료 날짜 (YYYY-MM-DD)")
+    site: str = Field(description="매장명")
 
-mcp = FastMCP("diagnose")
+# Register routes with FastAPI app
+def register_routes(app):
 
-@mcp.tool()
-def get_db_name(site: str) -> str:
-    """특정 매장의 데이터베이스명 조회"""
-    try:
-        connection_info = get_site_connection_info(site)
-        if not connection_info:
-            return f"❌ {site} 매장 정보를 찾을 수 없습니다."
-        
-        db_name = connection_info.get('db_name', 'plusinsight')
-        return f"📋 **{site} 매장 정보:**\n데이터베이스명: {db_name}"
-    except Exception as e:
-        return f"❌ {site} 매장 DB명 조회 실패: {e}"
+    @app.post("/mcp/tools/diagnose/db-name", tags=["diagnose"])
+    async def get_db_name(request: SiteRequest):
+        """특정 매장의 데이터베이스명 조회"""
+        try:
+            connection_info = get_site_connection_info(request.site)
+            if not connection_info:
+                raise HTTPException(status_code=404, detail=f"❌ {request.site} 매장 정보를 찾을 수 없습니다.")
+            
+            db_name = connection_info.get('db_name', 'plusinsight')
+            result = f"📋 **{request.site} 매장 정보:**\n데이터베이스명: {db_name}"
+            return {"result": result}
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"❌ {request.site} 매장 DB명 조회 실패: {e}")
 
 @mcp.tool()
 def diagnose_avg_in(start_date: str, end_date: str, site: str) -> str:
