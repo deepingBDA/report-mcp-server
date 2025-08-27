@@ -119,7 +119,7 @@ class BaseWorkflow(ABC, Generic[StateType]):
             if str(mcp_tools_path) not in sys.path:
                 sys.path.insert(0, str(mcp_tools_path))
             
-            from config.html_output_config import get_full_html_path
+            from mcp_tools.config.html_output_config import get_full_html_path
             
             # 경로 가져오기
             out_path, latest_path = get_full_html_path(

@@ -27,8 +27,8 @@ from langgraph.graph import END, START, StateGraph
 from langchain_openai import ChatOpenAI
 
 from mcp_tools.reports.base_workflow import BaseWorkflow, BaseState
-from reports.svg_renderer import svg_sparkline
-from reports.weekly_domain import to_pct_series
+from mcp_tools.reports_lib.svg_renderer import svg_sparkline
+from mcp_tools.reports_lib.weekly_domain import to_pct_series
 from mcp_tools.utils.database_manager import get_all_sites, get_site_client
 
 # 이미 검증된 데이터 수집 함수는 기존 CLI 스크립트에서 재사용
@@ -369,7 +369,7 @@ class VisitorSummaryWorkflow(BaseWorkflow[VisitorSummaryState]):
             return state
 
         # 중앙 설정에서 경로 가져오기
-        from config.html_output_config import get_full_html_path
+        from mcp_tools.config.html_output_config import get_full_html_path
         
         # 저장 경로: 1일은 daily, 7일은 weekly
         if state["periods"] == [1]:
