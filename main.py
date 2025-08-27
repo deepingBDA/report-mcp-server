@@ -21,6 +21,9 @@ import logging
 from mcp_tools.utils.database_manager import get_site_client, get_all_sites, get_site_connection_info
 from mcp_tools.utils.mcp_utils import is_token_limit_exceeded, DEFAULT_MODEL
 
+# Import MCP modules
+from mcp_tools.queries import mcp_diagnose_new
+
 # Simple settings
 class Settings:
     host: str = "0.0.0.0"
@@ -697,11 +700,27 @@ async def visitor_summary_html(request: VisitorSummaryRequest):
     """[VISITOR_SUMMARY] Generate a visitor summary HTML report"""
     logger.info(f"visitor_summary_html 호출: {request.end_date}")
     try:
-        # TODO: 실제 워크플로우 실행 구현
-        stores_str = request.stores if isinstance(request.stores, str) else ", ".join(request.stores)
-        result = f"방문 현황 요약 HTML 생성: {stores_str}, 기준일: {request.end_date}"
-        return {"result": result}
+        # Import and execute the actual workflow
+        from mcp_tools.reports.visitor_summary_workflow import VisitorSummaryWorkflow
+        
+        workflow = VisitorSummaryWorkflow()
+        
+        # Convert stores to list if string
+        stores_list = request.stores.split(",") if isinstance(request.stores, str) else request.stores
+        
+        # Run the workflow
+        result = workflow.run(
+            spec=request.spec or "SPEC_VISITOR",
+            end_date=request.end_date,
+            stores=stores_list,
+            periods=request.periods or [1],
+            user_prompt=request.user_prompt or "방문 현황 요약 통계(HTML)"
+        )
+        
+        return {"result": f"HTML 보고서가 생성되었습니다: {result}"}
+        
     except Exception as e:
+        logger.error(f"visitor_summary_html 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 class ComparisonAnalysisRequest(BaseModel):
@@ -773,6 +792,9 @@ async def execute_mcp_tool(tool_name: str, parameters: Dict[str, Any]):
         "available_endpoints": [r.path for r in app.routes if hasattr(r, 'path') and r.path.startswith('/mcp/tools/')],
         "note": "이 서버는 REST API 방식으로 작동합니다. plus-agent가 자동으로 적절한 엔드포인트를 호출합니다."
     }
+
+# Register MCP tool routes
+mcp_diagnose_new.register_routes(app)
 
 # Health check
 @app.get("/health")
