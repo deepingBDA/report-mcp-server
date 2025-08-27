@@ -785,9 +785,9 @@ async def test_email_connection():
             result = f"✅ **SMTP 연결 성공!**\\n\\n**서버:** {smtp_host}:{smtp_port}\\n**사용자:** {smtp_user}\\n**상태:** 인증 성공"
             return {"result": result, "status": "success"}
             
-        except smtplib.SMTPAuthenticationError:
-            result = f"❌ **SMTP 인증 실패**\\n\\n**서버:** {smtp_host}:{smtp_port}\\n**사용자:** {smtp_user}\\n**오류:** 사용자명 또는 패스워드가 잘못되었습니다"
-            return {"result": result, "status": "auth_failed"}
+        except smtplib.SMTPAuthenticationError as e:
+            result = f"❌ **SMTP 인증 실패**\\n\\n**서버:** {smtp_host}:{smtp_port}\\n**사용자:** {smtp_user}\\n**오류:** {e}\\n\\n**가능한 해결방법:**\\n- 앱 전용 패스워드 사용 확인\\n- 2단계 인증 설정 확인\\n- 계정 보안 설정 확인"
+            return {"result": result, "status": "auth_failed", "error_detail": str(e)}
             
         except smtplib.SMTPConnectError as e:
             result = f"❌ **SMTP 연결 실패**\\n\\n**서버:** {smtp_host}:{smtp_port}\\n**오류:** 서버에 연결할 수 없습니다 ({e})"
