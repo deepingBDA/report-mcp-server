@@ -5,6 +5,7 @@ HTTP API server providing MCP tools for retail analytics and business intelligen
 """
 
 import sys
+import os
 from pathlib import Path
 
 # Add current directory to Python path for mcp_tools imports
@@ -709,7 +710,7 @@ async def visitor_summary_html(request: VisitorSummaryRequest):
         stores_list = request.stores.split(",") if isinstance(request.stores, str) else request.stores
         
         # Run the workflow
-        result = workflow.run(
+        workflow_result = workflow.run(
             spec=request.spec or "visitor",
             end_date=request.end_date,
             stores=stores_list,
@@ -717,7 +718,38 @@ async def visitor_summary_html(request: VisitorSummaryRequest):
             user_prompt=request.user_prompt or "방문 현황 요약 통계(HTML)"
         )
         
-        return {"result": f"HTML 보고서가 생성되었습니다: {result}"}
+        # Try to read the generated HTML file and return its content
+        try:
+            from mcp_tools.config.html_output_config import get_full_html_path
+            
+            # Determine report type based on periods
+            periods = request.periods[0] if request.periods else 1
+            report_type = 'visitor_daily' if periods == 1 else 'visitor_weekly'
+            
+            # Get the file path
+            _, latest_path = get_full_html_path(report_type, request.end_date, only_latest=True)
+            
+            # Read the HTML file
+            if os.path.exists(latest_path):
+                with open(latest_path, 'r', encoding='utf-8') as f:
+                    html_content = f.read()
+                return {
+                    "result": "HTML 보고서 생성 및 반환 완료",
+                    "html_content": html_content,
+                    "file_path": latest_path,
+                    "workflow_summary": workflow_result
+                }
+            else:
+                return {
+                    "result": f"HTML 보고서가 생성되었으나 파일을 찾을 수 없음: {latest_path}",
+                    "workflow_summary": workflow_result
+                }
+        except Exception as file_error:
+            logger.error(f"HTML 파일 읽기 오류: {file_error}")
+            return {
+                "result": f"HTML 보고서 생성 완료 (파일 읽기 실패: {file_error})",
+                "workflow_summary": workflow_result
+            }
         
     except Exception as e:
         logger.error(f"visitor_summary_html 오류: {e}")
