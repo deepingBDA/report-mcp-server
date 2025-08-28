@@ -287,7 +287,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         rows_by_period: Dict[int, List[Dict[str, Optional[float]]]] = {}
 
         if data_type == "visitor" or data_type == "summary_report":
-            with timer(f"병렬_데이터_수집 ({len(stores)}개 매장)"):
+            # timer 제거됨f"병렬_데이터_수집 ({len(stores)}개 매장)"):
                 # 병렬 처리를 위한 워커 수 설정
                 max_workers = min(len(stores), os.cpu_count() or 4)
                 self.logger.info(f"병렬 데이터 수집 시작: {len(stores)}개 매장, {len(periods)}개 기간, {max_workers}개 워커")
@@ -313,7 +313,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         days: int
     ) -> List[Dict[str, Optional[float]]]:
         """특정 기간에 대해 모든 매장의 데이터를 병렬로 수집"""
-        with timer(f"{days}일_기간_병렬수집 ({len(stores)}개매장)"):
+        # timer 제거됨f"{days}일_기간_병렬수집 ({len(stores)}개매장)"):
             self.logger.info(f"{days}일 기간 데이터 병렬 수집 시작: {len(stores)}개 매장")
             
             # 모든 매장에 대한 Future 객체 생성
@@ -373,7 +373,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             }
 
     def _generate_html_node(self, state: SummaryReportState) -> SummaryReportState:
-        with timer("HTML_생성"):
+        # timer 제거됨"HTML_생성"):
             end_iso = state["end_date"]
             sections: List[str] = []
             
@@ -409,9 +409,8 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         return state
 
     def _summarize_node(self, state: SummaryReportState) -> SummaryReportState:
-        with timer("LLM_요약_생성"):
-            # LLM 요약을 위한 테이블 텍스트 구성(간결·일관된 포맷)
-            base_days = min(state["periods"]) if state["periods"] else 7
+        # LLM 요약을 위한 테이블 텍스트 구성(간결·일관된 포맷)
+        base_days = min(state["periods"]) if state["periods"] else 7
         
         if base_days == 1:
             # 일자별 모드: 평일/주말 구분 없음
@@ -444,90 +443,88 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
                     )
                 )
 
-            table_text = "\n".join(lines)
-            
-            # 1일 모드와 7일 모드에 따라 다른 프롬프트 사용
-            if base_days == 1:
-                prompt = self._summary_daily_prompt_tpl.format(table_text=table_text)
-                print(f"DEBUG: 1일 모드 프롬프트 사용")
-            else:
-                prompt = self._summary_prompt_tpl.format(table_text=table_text)
-                print(f"DEBUG: 7일 모드 프롬프트 사용")
+        table_text = "\n".join(lines)
+        
+        # 1일 모드와 7일 모드에 따라 다른 프롬프트 사용
+        if base_days == 1:
+            prompt = self._summary_daily_prompt_tpl.format(table_text=table_text)
+            print(f"DEBUG: 1일 모드 프롬프트 사용")
+        else:
+            prompt = self._summary_prompt_tpl.format(table_text=table_text)
+            print(f"DEBUG: 7일 모드 프롬프트 사용")
+        
+        # 디버깅을 위한 로그 추가
+        self.logger.info(f"LLM 요약 프롬프트 생성: {len(table_text)} 문자")
+        self.logger.info(f"테이블 데이터: {table_text}")
+        print(f"=== 테이블 데이터 ===")
+        print(table_text)
+        print(f"===================")
+        
+        try:
+            resp = self.llm.invoke(prompt)
+            content = (resp.content or "").strip()
+            state["llm_summary"] = content
             
             # 디버깅을 위한 로그 추가
-            self.logger.info(f"LLM 요약 프롬프트 생성: {len(table_text)} 문자")
-            self.logger.info(f"테이블 데이터: {table_text}")
-            print(f"=== 테이블 데이터 ===")
-            print(table_text)
-            print(f"===================")
+            self.logger.info(f"LLM 응답 성공: {len(content)} 문자")
+            self.logger.info(f"LLM 응답 내용: {content[:200]}...")
             
-            with timer("LLM_API_호출"):
+            # 1일 모드일 때 액션도 생성
+            if base_days == 1:
                 try:
-                    resp = self.llm.invoke(prompt)
-                    content = (resp.content or "").strip()
-                    state["llm_summary"] = content
-                    
-                    # 디버깅을 위한 로그 추가
-                    self.logger.info(f"LLM 응답 성공: {len(content)} 문자")
-                    self.logger.info(f"LLM 응답 내용: {content[:200]}...")
-                    
-                    # 1일 모드일 때 액션도 생성
-                    if base_days == 1:
-                        try:
-                            action_prompt = self._action_prompt_tpl.format(table_text=table_text)
-                            action_resp = self.llm.invoke(action_prompt)
-                            action_content = (action_resp.content or "").strip()
-                            state["llm_action"] = action_content
-                            self.logger.info(f"LLM 액션 생성 성공: {len(action_content)} 문자")
-                        except Exception as e:
-                            self.logger.error(f"LLM 액션 생성 실패: {e}")
-                            state["llm_action"] = "액션 생성 실패"
-                    else:
-                        state["llm_action"] = ""
-                    
+                    action_prompt = self._action_prompt_tpl.format(table_text=table_text)
+                    action_resp = self.llm.invoke(action_prompt)
+                    action_content = (action_resp.content or "").strip()
+                    state["llm_action"] = action_content
+                    self.logger.info(f"LLM 액션 생성 성공: {len(action_content)} 문자")
                 except Exception as e:
-                    self.logger.error(f"LLM 요약 실패: {e}")
-                    state["llm_summary"] = "요약 생성 실패"
-                    state["llm_action"] = ""
+                    self.logger.error(f"LLM 액션 생성 실패: {e}")
+                    state["llm_action"] = "액션 생성 실패"
+            else:
+                state["llm_action"] = ""
+            
+        except Exception as e:
+            self.logger.error(f"LLM 요약 실패: {e}")
+            state["llm_summary"] = "요약 생성 실패"
+            state["llm_action"] = ""
         
         return state
 
     def _save_node(self, state: SummaryReportState) -> SummaryReportState:
-        with timer("파일_저장"):
-            html = state.get("html_content", "")
-            if not html:
-                state["final_result"] = "HTML 콘텐츠가 없음"
-                return state
+        html = state.get("html_content", "")
+        if not html:
+            state["final_result"] = "HTML 콘텐츠가 없음"
+            return state
 
-            # 중앙 설정에서 경로 가져오기
-            from libs.html_output_config import get_full_html_path
-            
-            # 저장 경로: 1일은 daily, 7일은 weekly
-            if state["periods"] == [1]:
-                report_type = 'visitor_daily'
-            else:
-                report_type = 'visitor_weekly'
-            
-            out_path, latest_path = get_full_html_path(
-                report_type=report_type,
-                end_date=state['end_date'],
-                use_unified=False  # 각 폴더별로 분리
-            )
+        # 중앙 설정에서 경로 가져오기
+        from libs.html_output_config import get_full_html_path
+        
+        # 저장 경로: 1일은 daily, 7일은 weekly
+        if state["periods"] == [1]:
+            report_type = 'visitor_daily'
+        else:
+            report_type = 'visitor_weekly'
+        
+        out_path, latest_path = get_full_html_path(
+            report_type=report_type,
+            end_date=state['end_date'],
+            use_unified=False  # 각 폴더별로 분리
+        )
+        try:
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(html)
             try:
-                with open(out_path, "w", encoding="utf-8") as f:
-                    f.write(html)
-                try:
-                    from shutil import copyfile
-                    copyfile(out_path, latest_path)
-                except Exception:
-                    pass
-                web_url = f"/reports/weekly/{os.path.basename(out_path)}"
-                state["final_result"] = (
-                    "📊 방문 현황 요약 통계 생성 완료!\n\n" f"🔗 [웹에서 보기]({web_url})\n\n" + (state.get("llm_summary", "") or "")
-                )
-            except Exception as e:
-                self.logger.error(f"HTML 저장 실패: {e}")
-                state["final_result"] = f"HTML 저장 실패: {e}"
+                from shutil import copyfile
+                copyfile(out_path, latest_path)
+            except Exception:
+                pass
+            web_url = f"/reports/weekly/{os.path.basename(out_path)}"
+            state["final_result"] = (
+                "📊 방문 현황 요약 통계 생성 완료!\n\n" f"🔗 [웹에서 보기]({web_url})\n\n" + (state.get("llm_summary", "") or "")
+            )
+        except Exception as e:
+            self.logger.error(f"HTML 저장 실패: {e}")
+            state["final_result"] = f"HTML 저장 실패: {e}"
         
         return state
 
