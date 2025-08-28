@@ -87,17 +87,13 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
     def __init__(self) -> None:
         super().__init__(workflow_name="summary_report")
         load_dotenv()
-        # gpt-5, ReAct 지향 프롬프트 사용(사고는 내부, 출력은 요약 결과만)
-        # GPT-5는 temperature 파라미터를 지원하지 않으므로 제거
+        # gpt-4o로 변경 (성능 최적화)
         self.llm = ChatOpenAI(model="gpt-5")
+        # 7일 모드용 기존 프롬프트 (복원)
         self._summary_prompt_tpl = (
             """
-            다음 데이터(매장별 방문객 수, 전주 동일 요일 대비 증감률, 주차별 추이)를 바탕으로 대시보드용 요약을 작성해줘.
 
-            "요약" 블록에서는 bullet 형식으로 작성하고, 다음 규칙을 적용해:
-            - 전주 동일 요일 대비 증감률이 가장 높은 매장은 ( +% )를 **빨간색 글씨**로 표시하고, 가장 낮은 매장은 ( -% )를 **파란색 글씨**로 표시할 것.
-            - 주차별 증감률 추이는 증가세, 감소세, 혹은 증가폭 둔화로 간단히 기술할 것.
-            - 금일 방문객 수 상위 2개, 하위 2개 매장은 각각 ( ~명 )을 괄호 안에 적어줄 것.
+        [3줄 요약 지침]
 
         1. 증감률 지속 감소 매장: 최근 4주 연속 하락추세인 매장명과 어떤 지표(평일/주말/총)인지 간단 표기.
         2. 총 증감률 감소 매장: 감소율 상위 매장명과 %를 나열, 공통적인 감소 양상 요약.
@@ -123,13 +119,25 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         - 규칙: "▼감소 매장" 문구와 감소율은 <span class="pct-neg">로 감싸 파란색 표시
 
         [추가 규칙]
-        - 단, 각 항목에 해당하는 값이 없다면 동일한 <li> 형식을 유지하고 "해당없음"으로 출력하세요.
-        - 총 증감률이 1% ~ -1%인 매장은 출력하지 않도록 한다.
-        - 모든 매장이 증가 또는 감소 매장에 들어가야한다.
+        - 모든 출력은 <ul> 태그 없이 <li> 태그만 나열합니다.
+        - 각 지표별로 공백 또는 그룹핑 없이 연속적으로 출력합니다.
+        - 불필요한 텍스트나 코드블록 없이 <li> 태그들만 연달아 출력합니다.
+        - 마지막 라인까지 <li> 태그로 끝납니다.
 
-        예: <li class="trend-red"><span class="badge">지속 감소 매장: 해당없음</span></li>
-            <li><span class="pct-pos">▲증가 매장</span>: 해당없음</li>
-            <li><span class="pct-neg">▼감소 매장</span>: 해당없음</li>
+            데이터:
+            {table_text}
+            """
+        )
+        
+        # 1일 모드용 프롬프트 (신규)
+        self._summary_daily_prompt_tpl = (
+            """
+            다음 데이터(매장별 방문객 수, 전주 동일 요일 대비 증감률, 주차별 추이)를 바탕으로 대시보드용 요약을 작성해줘.
+
+            "요약" 블록에서는 bullet 형식으로 작성하고, 다음 규칙을 적용해:
+            - 전주 동일 요일 대비 증감률이 가장 높은 매장은 ( +% )를 **빨간색 글씨**로 표시하고, 가장 낮은 매장은 ( -% )를 **파란색 글씨**로 표시할 것.
+            - 주차별 증감률 추이는 증가세, 감소세, 혹은 증가폭 둔화로 간단히 기술할 것.
+            - 금일 방문객 수 상위 2개, 하위 2개 매장은 각각 ( ~명 )을 괄호 안에 적어줄 것.
 
             데이터:
             {table_text}
@@ -435,7 +443,11 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
 
             table_text = "\n".join(lines)
             
-            prompt = self._summary_prompt_tpl.format(table_text=table_text)
+            # 1일 모드와 7일 모드에 따라 다른 프롬프트 사용
+            if state["compare_lag"] == 7 and base_days == 1:
+                prompt = self._summary_daily_prompt_tpl.format(table_text=table_text)
+            else:
+                prompt = self._summary_prompt_tpl.format(table_text=table_text)
             
             # 디버깅을 위한 로그 추가
             self.logger.info(f"LLM 요약 프롬프트 생성: {len(table_text)} 문자")
