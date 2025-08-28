@@ -1036,9 +1036,11 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             # 코드펜스 제거
             if raw.startswith("```") and raw.endswith("```"):
                 raw = "\n".join(raw.splitlines()[1:-1]).strip()
-            # HTML 그대로 사용
+            # HTML 그대로 사용 (요약과 동일한 방식)
             if "<ul" in raw and "<li" in raw:
                 content = raw
+            elif raw.startswith("<li") and "</li>" in raw:
+                content = f"<ul class=\"action-list\">{raw}</ul>"
             else:
                 # 마크다운 불릿을 HTML li 태그로 변환
                 lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
