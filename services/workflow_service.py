@@ -48,7 +48,7 @@ class WorkflowService:
                 report_type = 'visitor_daily' if periods == 1 else 'visitor_weekly'
                 
                 # Get the file path
-                latest_path = get_full_html_path(report_type, latest=True)
+                _, latest_path = get_full_html_path(report_type, end_date, only_latest=True)
                 
                 if os.path.exists(latest_path):
                     with open(latest_path, 'r', encoding='utf-8') as f:
@@ -103,10 +103,38 @@ class WorkflowService:
                 user_prompt=user_prompt
             )
             
-            return {
-                "result": workflow_result,
-                "workflow_summary": "비교 분석 완료"
-            }
+            # Try to read the generated HTML file
+            try:
+                from libs.html_output_config import get_full_html_path
+                
+                # Get the file path for comparison reports
+                _, latest_path = get_full_html_path("comparison", end_date, only_latest=True)
+                
+                if os.path.exists(latest_path):
+                    with open(latest_path, 'r', encoding='utf-8') as f:
+                        html_content = f.read()
+                    return {
+                        "result": "HTML 비교 분석 보고서 생성 및 반환 완료",
+                        "html_content": html_content,
+                        "file_path": latest_path,
+                        "workflow_summary": workflow_result
+                    }
+                else:
+                    return {
+                        "result": workflow_result,
+                        "html_content": None,
+                        "file_path": None,
+                        "workflow_summary": "HTML 파일을 찾을 수 없음"
+                    }
+                    
+            except Exception as e:
+                logger.error(f"HTML 파일 읽기 실패: {e}")
+                return {
+                    "result": workflow_result,
+                    "html_content": None,
+                    "file_path": None,
+                    "workflow_summary": f"HTML 파일 처리 오류: {e}"
+                }
             
         except Exception as e:
             logger.error(f"Comparison analysis workflow 실행 실패: {e}")

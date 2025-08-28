@@ -92,7 +92,14 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
         """
         # 입력 정규화
         if isinstance(stores, str):
-            stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
+            # "all" stores 처리
+            if stores.lower().strip() == "all":
+                from libs.database import get_all_sites
+                stores_list = get_all_sites()
+                if not stores_list:
+                    raise ValueError("전체 매장 목록을 가져올 수 없습니다")
+            else:
+                stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
         else:
             stores_list = [str(s).strip() for s in stores if str(s).strip()]
         
@@ -273,14 +280,16 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
             state["final_result"] = "HTML 콘텐츠가 없음"
             return state
         
-        # 저장 경로: chat/report/comparison
-        out_dir = os.path.abspath(os.path.join("/Users/junho/DA-agent", "chat", "report", "comparison"))
-        os.makedirs(out_dir, exist_ok=True)
-        
-        out_path = os.path.join(out_dir, f"comparison_analysis_{state['end_date']}.html")
-        latest_path = os.path.join(out_dir, "latest.html")
-        
         try:
+            from libs.html_output_config import get_full_html_path
+            
+            # comparison 타입으로 저장
+            out_path, latest_path = get_full_html_path("comparison", state['end_date'], only_latest=True)
+            
+            # 디렉토리 생성
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            
+            # 파일 저장
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write(html)
             
@@ -291,10 +300,9 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
             except Exception:
                 pass
             
-            web_url = f"/reports/comparison/{os.path.basename(out_path)}"
             state["final_result"] = (
                 "📊 매장 비교 분석 리포트 생성 완료!\n\n"
-                f"🔗 [웹에서 보기]({web_url})\n\n"
+                f"📁 파일 경로: {out_path}\n\n"
                 f"📈 분석 내용:\n"
                 f"• 매장별 일별 방문추이 (전주 vs 금주)\n"
                 f"• 고객 구성 차이 (성별, 연령대)\n"
