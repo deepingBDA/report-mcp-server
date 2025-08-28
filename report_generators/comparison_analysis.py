@@ -63,7 +63,7 @@ class ComparisonAnalysisGenerator(BaseWorkflow[ComparisonAnalysisState]):
         
         # 환경변수 로드 및 LLM 설정
         load_dotenv()
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-5-mini")
         
         # 데이터 추출기 및 차트 렌더러
         self.extractor = ComparisonDataExtractor()
