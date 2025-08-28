@@ -110,14 +110,15 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             - 불릿 제거
 
         2) 총 증감률 증가 매장:
-        - 출력 형식: <li><span class="pct-pos">▲증가 매장</span>: [매장명](<span class="pct-pos">+x.x%</span>, 평일/주말 증감률 차이가 10% 이상일 때만 "평일 요인", "주말 요인" 등으로 표기, 그렇지 않으면 퍼센테이지만 표기)</li>
-        - 총 증감률이 10% 미만 일 경우, 증가매장, 감소매장에 넣지 않음
-        - 규칙: "▲증가 매장" 문구와 증가율은 <span class="pct-pos">로 감싸 빨간색 표시
-        - 주의: 증가 매장, 감소 매장 문구 이후에 각자 해당하는 여러 개의 매장 정보 출력 
+        - 출력 형식: <li><span class="pct-pos">▲증가 매장</span>: [매장명1](<span class="pct-pos">+x.x%</span>), [매장명2](<span class="pct-pos">+x.x%</span>), [매장명3](<span class="pct-pos">+x.x%</span>) ...</li>
+        - 중요: 모든 증가 매장을 하나의 <li> 태그 안에 콤마로 구분해서 나열
+        - 평일/주말 증감률 차이가 10% 이상일 때만 "평일 요인", "주말 요인" 추가
+        - 규칙: "▲증가 매장" 문구와 각 매장의 증가율은 <span class="pct-pos">로 감싸기
 
         3) 총 증감률 감소 매장:
-        - 출력 형식: <li><span class="pct-neg">▼감소 매장</span>: [매장명](<span class="pct-neg">-x.x%</span>)</li>
-        - 규칙: "▼감소 매장" 문구와 감소율은 <span class="pct-neg">로 감싸 파란색 표시
+        - 출력 형식: <li><span class="pct-neg">▼감소 매장</span>: [매장명1](<span class="pct-neg">-x.x%</span>), [매장명2](<span class="pct-neg">-x.x%</span>) ...</li>
+        - 중요: 모든 감소 매장을 하나의 <li> 태그 안에 콤마로 구분해서 나열
+        - 규칙: "▼감소 매장" 문구와 각 매장의 감소율은 <span class="pct-neg">로 감싸기
 
         [추가 규칙]
         - 모든 출력은 <ul> 태그 없이 <li> 태그만 나열합니다.
