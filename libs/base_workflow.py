@@ -162,7 +162,7 @@ class BaseWorkflow(ABC, Generic[StateType]):
             if llm_model is None:
                 # 기본 모델 사용
                 from langchain_openai import ChatOpenAI
-                llm_model = ChatOpenAI(model="gpt-5-mini")
+                llm_model = ChatOpenAI(model="gpt-4o", temperature=0.1)
             
             # 프롬프트 생성
             prompt = prompt_template.format(data=data)
