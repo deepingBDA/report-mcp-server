@@ -34,21 +34,6 @@ from libs.svg_renderer import svg_sparkline
 from libs.weekly_domain import to_pct_series
 from libs.database import get_all_sites, get_site_client
 
-# 간단한 시간 측정 (제거 시 이 import와 with timer() 블록들만 삭제하면 됨)
-try:
-    from libs.simple_timer import timer, print_timer_summary, reset_timers, get_timer_results
-except ImportError:
-    # 타이머 파일이 없어도 정상 작동하도록
-    from contextlib import contextmanager
-    @contextmanager
-    def timer(name):
-        yield
-    def print_timer_summary():
-        pass
-    def reset_timers():
-        pass
-    def get_timer_results():
-        return None
 
 # 이미 검증된 데이터 수집 함수는 기존 CLI 스크립트에서 재사용
 # CLI 관련 함수들은 이 파일에 직접 구현
@@ -213,8 +198,6 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         periods: int = 7,
         compare_lag: Optional[int] = None,
     ) -> str:
-        # 성능 측정 시작 - 이전 측정 결과 초기화
-        reset_timers()
         
         # 입력 정규화 (이미 ReportGeneratorService.normalize_stores_list에서 처리됨)
         if isinstance(stores, str):
@@ -257,8 +240,6 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
 
         result = self.workflow_app.invoke(initial_state)
         
-        # 성능 측정 결과 출력 (로거로)
-        print_timer_summary()
         
         return result.get("final_result", "워크플로우 실행 완료")
 
@@ -287,7 +268,6 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         rows_by_period: Dict[int, List[Dict[str, Optional[float]]]] = {}
 
         if data_type == "visitor" or data_type == "summary_report":
-            # timer 제거됨f"병렬_데이터_수집 ({len(stores)}개 매장)"):
                 # 병렬 처리를 위한 워커 수 설정
                 max_workers = min(len(stores), os.cpu_count() or 4)
                 self.logger.info(f"병렬 데이터 수집 시작: {len(stores)}개 매장, {len(periods)}개 기간, {max_workers}개 워커")
@@ -313,41 +293,40 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         days: int
     ) -> List[Dict[str, Optional[float]]]:
         """특정 기간에 대해 모든 매장의 데이터를 병렬로 수집"""
-        # timer 제거됨f"{days}일_기간_병렬수집 ({len(stores)}개매장)"):
-            self.logger.info(f"{days}일 기간 데이터 병렬 수집 시작: {len(stores)}개 매장")
+        self.logger.info(f"{days}일 기간 데이터 병렬 수집 시작: {len(stores)}개 매장")
+        
+        # 모든 매장에 대한 Future 객체 생성
+        future_to_store = {
+            executor.submit(self._fetch_store_data, store, end_iso, days): store
+            for store in stores
+        }
+        
+        rows = []
+        completed_count = 0
+        
+        # as_completed를 사용하여 완료되는 대로 결과 수집
+        for future in as_completed(future_to_store):
+            store = future_to_store[future]
+            completed_count += 1
             
-            # 모든 매장에 대한 Future 객체 생성
-            future_to_store = {
-                executor.submit(self._fetch_store_data, store, end_iso, days): store
-                for store in stores
-            }
-            
-            rows = []
-            completed_count = 0
-            
-            # as_completed를 사용하여 완료되는 대로 결과 수집
-            for future in as_completed(future_to_store):
-                store = future_to_store[future]
-                completed_count += 1
-                
-                try:
-                    store_data = future.result()
-                    rows.append(store_data)
-                    self.logger.info(f"{days}일 데이터 수집 완료 ({completed_count}/{len(stores)}): {store}")
-                except Exception as e:
-                    self.logger.error(f"{days}일 데이터 수집 실패 ({completed_count}/{len(stores)}): {store}, {e}")
-                    # 실패한 경우 기본값으로 추가
-                    rows.append({
-                        "site": store,
-                        "curr_total": None,
-                        "prev_total": None,
-                        "weekday_delta_pct": None,
-                        "weekend_delta_pct": None,
-                        "total_delta_pct": None,
-                    })
-            
-            self.logger.info(f"{days}일 기간 데이터 병렬 수집 완료: {len(rows)}개 매장")
-            return rows
+            try:
+                store_data = future.result()
+                rows.append(store_data)
+                self.logger.info(f"{days}일 데이터 수집 완료 ({completed_count}/{len(stores)}): {store}")
+            except Exception as e:
+                self.logger.error(f"{days}일 데이터 수집 실패 ({completed_count}/{len(stores)}): {store}, {e}")
+                # 실패한 경우 기본값으로 추가
+                rows.append({
+                    "site": store,
+                    "curr_total": None,
+                    "prev_total": None,
+                    "weekday_delta_pct": None,
+                    "weekend_delta_pct": None,
+                    "total_delta_pct": None,
+                })
+        
+        self.logger.info(f"{days}일 기간 데이터 병렬 수집 완료: {len(rows)}개 매장")
+        return rows
 
     def _fetch_store_data(self, store: str, end_iso: str, days: int) -> Dict[str, Optional[float]]:
         """단일 매장의 데이터 수집"""
@@ -373,28 +352,27 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             }
 
     def _generate_html_node(self, state: SummaryReportState) -> SummaryReportState:
-        # timer 제거됨"HTML_생성"):
-            end_iso = state["end_date"]
-            sections: List[str] = []
-            
-            # 디버깅을 위한 로그 추가
-            llm_summary = state.get("llm_summary", "")
-            self.logger.info(f"HTML 생성 시 llm_summary 길이: {len(llm_summary)}")
-            self.logger.info(f"HTML 생성 시 llm_summary 내용: {llm_summary[:200]}...")
-            
-            for days in state["periods"]:
-                rows = state["rows_by_period"].get(days, [])
-                sections.append(
-                    self._build_tab_section_html(
-                        section_id=f"section-{days}",
-                        title_suffix=f"최근 {days}일 vs 이전 {days}일",
-                        end_iso=end_iso,
-                        days=days,
-                        rows=rows,
-                        llm_summary=llm_summary,
-                        state=state,
-                    )
+        end_iso = state["end_date"]
+        sections: List[str] = []
+        
+        # 디버깅을 위한 로그 추가
+        llm_summary = state.get("llm_summary", "")
+        self.logger.info(f"HTML 생성 시 llm_summary 길이: {len(llm_summary)}")
+        self.logger.info(f"HTML 생성 시 llm_summary 내용: {llm_summary[:200]}...")
+        
+        for days in state["periods"]:
+            rows = state["rows_by_period"].get(days, [])
+            sections.append(
+                self._build_tab_section_html(
+                    section_id=f"section-{days}",
+                    title_suffix=f"최근 {days}일 vs 이전 {days}일",
+                    end_iso=end_iso,
+                    days=days,
+                    rows=rows,
+                    llm_summary=llm_summary,
+                    state=state,
                 )
+            )
 
         body_html = "\n".join(sections)
         
@@ -409,8 +387,13 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         return state
 
     def _summarize_node(self, state: SummaryReportState) -> SummaryReportState:
+        # 디버깅: _summarize_node 호출 확인
+        self.logger.info(f"=== _summarize_node 호출됨 ===")
+        self.logger.info(f"state['periods']: {state['periods']}")
+        
         # LLM 요약을 위한 테이블 텍스트 구성(간결·일관된 포맷)
         base_days = min(state["periods"]) if state["periods"] else 7
+        self.logger.info(f"base_days: {base_days}")
         
         if base_days == 1:
             # 일자별 모드: 평일/주말 구분 없음
@@ -461,6 +444,8 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         print(f"===================")
         
         try:
+            self.logger.info(f"=== LLM 요약 호출 시작 ===")
+            self.logger.info(f"프롬프트 길이: {len(prompt)} 문자")
             resp = self.llm.invoke(prompt)
             content = (resp.content or "").strip()
             state["llm_summary"] = content
@@ -468,23 +453,32 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             # 디버깅을 위한 로그 추가
             self.logger.info(f"LLM 응답 성공: {len(content)} 문자")
             self.logger.info(f"LLM 응답 내용: {content[:200]}...")
+            self.logger.info(f"=== LLM 요약 완료 ===")
             
             # 1일 모드일 때 액션도 생성
             if base_days == 1:
                 try:
+                    self.logger.info(f"=== LLM 액션 호출 시작 ===")
                     action_prompt = self._action_prompt_tpl.format(table_text=table_text)
+                    self.logger.info(f"액션 프롬프트 길이: {len(action_prompt)} 문자")
                     action_resp = self.llm.invoke(action_prompt)
                     action_content = (action_resp.content or "").strip()
                     state["llm_action"] = action_content
                     self.logger.info(f"LLM 액션 생성 성공: {len(action_content)} 문자")
+                    self.logger.info(f"LLM 액션 내용: {action_content[:200]}...")
+                    self.logger.info(f"=== LLM 액션 완료 ===")
                 except Exception as e:
                     self.logger.error(f"LLM 액션 생성 실패: {e}")
+                    self.logger.error(f"액션 예외 상세: {str(e)}")
                     state["llm_action"] = "액션 생성 실패"
             else:
                 state["llm_action"] = ""
+                self.logger.info(f"7일 모드: 액션 생성 건너뜀")
             
         except Exception as e:
             self.logger.error(f"LLM 요약 실패: {e}")
+            self.logger.error(f"요약 예외 상세: {str(e)}")
+            self.logger.error(f"예외 타입: {type(e).__name__}")
             state["llm_summary"] = "요약 생성 실패"
             state["llm_action"] = ""
         
