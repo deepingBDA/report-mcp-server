@@ -614,9 +614,9 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
     {css_rules}
     /* Summary readability */
     .summary-list {{ margin: 0; padding: 0; line-height: 1.6; }}
-    .summary-list li {{ margin: 4px 0; text-align: left; list-style: none; display: list-item; }}
+    .summary-list li {{ margin: 4px 0; text-align: left; display: list-item; }}
     .action-list {{ margin: 0; padding: 0; line-height: 1.6; }}
-    .action-list li {{ margin: 4px 0; text-align: left; list-style: none; display: list-item; }}
+    .action-list li {{ margin: 4px 0; text-align: left; display: list-item; }}
     
     /* 프롬프트 기반 요약 스타일 */
     .trend-red {{ color: #7f1d1d; }}
