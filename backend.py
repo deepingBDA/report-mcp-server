@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config.settings import setup_logging
 from api.base_routes import router as base_router
-from api.workflow_routes import router as workflow_router
+from api.report_generator_routes import router as report_generator_router
 
 # Setup logging
 setup_logging()
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Create FastAPI app
 app = FastAPI(
     title="Report MCP Server",
-    description="Simple HTTP API server for visitor and comparison analysis workflows",
+    description="Simple HTTP API server for visitor and comparison analysis reports",
     version="4.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -32,6 +32,6 @@ app.add_middleware(
 
 # Include routers
 app.include_router(base_router)
-app.include_router(workflow_router)
+app.include_router(report_generator_router)
 
 logger.info("Report MCP Server application initialized")

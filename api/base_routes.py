@@ -12,8 +12,8 @@ async def root():
         "message": "Report MCP Server",
         "version": "4.0.0",
         "endpoints": [
-            "/mcp/tools/workflow/summary-report-html",
-            "/mcp/tools/workflow/comparison-analysis-html"
+            "/mcp/tools/report-generator/summary-report-html",
+            "/mcp/tools/report-generator/comparison-analysis-html"
         ]
     }
 
