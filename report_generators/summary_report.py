@@ -111,8 +111,9 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
 
         2) 총 증감률 증가 매장:
         - 출력 형식: <li><span class="pct-pos">▲증가 매장</span>: [매장명](<span class="pct-pos">+x.x%</span>, 평일/주말 증감률 차이가 10% 이상일 때만 "평일 요인", "주말 요인" 등으로 표기, 그렇지 않으면 퍼센테이지만 표기)</li>
+        - 총 증감률이 10% 미만 일 경우, 증가매장, 감소매장에 넣지 않음
         - 규칙: "▲증가 매장" 문구와 증가율은 <span class="pct-pos">로 감싸 빨간색 표시
-        - 주의: 증가 매장, 감소매장 문구 이후에 여러 개의 매장 정보 출력 
+        - 주의: 증가 매장, 감소 매장 문구 이후에 각자 해당하는 여러 개의 매장 정보 출력 
 
         3) 총 증감률 감소 매장:
         - 출력 형식: <li><span class="pct-neg">▼감소 매장</span>: [매장명](<span class="pct-neg">-x.x%</span>)</li>
@@ -446,8 +447,10 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             # 1일 모드와 7일 모드에 따라 다른 프롬프트 사용
             if state["compare_lag"] == 7 and base_days == 1:
                 prompt = self._summary_daily_prompt_tpl.format(table_text=table_text)
+                print(f"DEBUG: 1일 모드 프롬프트 사용")
             else:
                 prompt = self._summary_prompt_tpl.format(table_text=table_text)
+                print(f"DEBUG: 7일 모드 프롬프트 사용")
             
             # 디버깅을 위한 로그 추가
             self.logger.info(f"LLM 요약 프롬프트 생성: {len(table_text)} 문자")
