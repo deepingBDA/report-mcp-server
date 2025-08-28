@@ -23,6 +23,7 @@ from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, TypedDict
 import math
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
@@ -32,6 +33,22 @@ from libs.base_workflow import BaseWorkflow, BaseState
 from libs.svg_renderer import svg_sparkline
 from libs.weekly_domain import to_pct_series
 from libs.database import get_all_sites, get_site_client
+
+# 간단한 시간 측정 (제거 시 이 import와 with timer() 블록들만 삭제하면 됨)
+try:
+    from libs.simple_timer import timer, print_timer_summary, reset_timers, get_timer_results
+except ImportError:
+    # 타이머 파일이 없어도 정상 작동하도록
+    from contextlib import contextmanager
+    @contextmanager
+    def timer(name):
+        yield
+    def print_timer_summary():
+        pass
+    def reset_timers():
+        pass
+    def get_timer_results():
+        return None
 
 # 이미 검증된 데이터 수집 함수는 기존 CLI 스크립트에서 재사용
 # CLI 관련 함수들은 이 파일에 직접 구현
@@ -55,6 +72,7 @@ class SummaryReportState(BaseState):
     rows_by_period: Dict[int, List[Dict[str, Optional[float]]]]
     html_content: str
     llm_summary: str
+    llm_action: str
     final_result: str
 
 
@@ -74,8 +92,12 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         self.llm = ChatOpenAI(model="gpt-5")
         self._summary_prompt_tpl = (
             """
+            다음 데이터(매장별 방문객 수, 전주 동일 요일 대비 증감률, 주차별 추이)를 바탕으로 대시보드용 요약을 작성해줘.
 
-        [3줄 요약 지침]
+            "요약" 블록에서는 bullet 형식으로 작성하고, 다음 규칙을 적용해:
+            - 전주 동일 요일 대비 증감률이 가장 높은 매장은 ( +% )를 **빨간색 글씨**로 표시하고, 가장 낮은 매장은 ( -% )를 **파란색 글씨**로 표시할 것.
+            - 주차별 증감률 추이는 증가세, 감소세, 혹은 증가폭 둔화로 간단히 기술할 것.
+            - 금일 방문객 수 상위 2개, 하위 2개 매장은 각각 ( ~명 )을 괄호 안에 적어줄 것.
 
         1. 증감률 지속 감소 매장: 최근 4주 연속 하락추세인 매장명과 어떤 지표(평일/주말/총)인지 간단 표기.
         2. 총 증감률 감소 매장: 감소율 상위 매장명과 %를 나열, 공통적인 감소 양상 요약.
@@ -152,6 +174,21 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             {table_text}
             """
         )
+        
+        self._action_prompt_tpl = (
+            """
+            다음 데이터(매장별 방문객 수, 전주 동일 요일 대비 증감률, 주차별 추이)를 바탕으로 대시보드용 액션을 작성해줘.
+
+            "액션" 블록에서도 bullet 형식으로 작성하고, 각 매장 상황에 따른 권장 액션을 간단히 정리해:
+            - 증가세 매장은 원인(핵심 상품, 마케팅 효과 등)을 확인하고 확산 여부 검토
+            - 증가폭 둔화나 감소세 매장은 원인 분석 및 개선 전략 필요
+            - 방문객 수는 높지만 증감률이 낮은 매장은 고객 유지 전략 필요
+            - 방문객 수가 저조한 매장은 지역 맞춤 마케팅/이벤트 강화 필요
+
+            데이터:
+            {table_text}
+            """
+        )
 
         self.workflow_app = self._build_workflow()
 
@@ -165,6 +202,9 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         periods: int = 7,
         compare_lag: Optional[int] = None,
     ) -> str:
+        # 성능 측정 시작 - 이전 측정 결과 초기화
+        reset_timers()
+        
         # 입력 정규화 (이미 ReportGeneratorService.normalize_stores_list에서 처리됨)
         if isinstance(stores, str):
             stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
@@ -200,10 +240,15 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             "rows_by_period": {},
             "html_content": "",
             "llm_summary": "",
+            "llm_action": "",
             "final_result": "",
         }  # type: ignore
 
         result = self.workflow_app.invoke(initial_state)
+        
+        # 성능 측정 결과 출력 (로거로)
+        print_timer_summary()
+        
         return result.get("final_result", "워크플로우 실행 완료")
 
     # ----------------------------- Graph -----------------------------
@@ -231,33 +276,15 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         rows_by_period: Dict[int, List[Dict[str, Optional[float]]]] = {}
 
         if data_type == "visitor" or data_type == "summary_report":
-            for days in periods:
-                rows: List[Dict[str, Optional[float]]] = []
-                for st in stores:
-                    try:
-                        summ = summarize_period_rates(st, end_iso, days)
-                    except Exception as e:
-                        self.logger.warning(f"요약 수집 실패: {st}, {e}")
-                        summ = {
-                            "site": st,
-                            "end_date": end_iso,
-                            "curr_total": None,
-                            "prev_total": None,
-                            "weekday_delta_pct": None,
-                            "weekend_delta_pct": None,
-                            "total_delta_pct": None,
-                        }
-                    rows.append(
-                        {
-                            "site": summ.get("site", st),
-                            "curr_total": summ.get("curr_total"),
-                            "prev_total": summ.get("prev_total"),
-                            "weekday_delta_pct": summ.get("weekday_delta_pct"),
-                            "weekend_delta_pct": summ.get("weekend_delta_pct"),
-                            "total_delta_pct": summ.get("total_delta_pct"),
-                        }
-                    )
-                rows_by_period[days] = rows
+            with timer(f"병렬_데이터_수집 ({len(stores)}개 매장)"):
+                # 병렬 처리를 위한 워커 수 설정
+                max_workers = min(len(stores), os.cpu_count() or 4)
+                self.logger.info(f"병렬 데이터 수집 시작: {len(stores)}개 매장, {len(periods)}개 기간, {max_workers}개 워커")
+                
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    for days in periods:
+                        rows_by_period[days] = self._fetch_period_parallel(executor, stores, end_iso, days)
+                    
         elif data_type in ("dwell_time", "conversion_rate"):
             # TODO: 추후 구현 - 동일한 테이블 스키마로 값을 매핑하도록 확장
             raise NotImplementedError(f"data_type '{data_type}' 은(는) 아직 미구현입니다. 현재는 'visitor'만 지원합니다.")
@@ -267,28 +294,96 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         state["rows_by_period"] = rows_by_period
         return state
 
+    def _fetch_period_parallel(
+        self, 
+        executor: ThreadPoolExecutor, 
+        stores: List[str], 
+        end_iso: str, 
+        days: int
+    ) -> List[Dict[str, Optional[float]]]:
+        """특정 기간에 대해 모든 매장의 데이터를 병렬로 수집"""
+        with timer(f"{days}일_기간_병렬수집 ({len(stores)}개매장)"):
+            self.logger.info(f"{days}일 기간 데이터 병렬 수집 시작: {len(stores)}개 매장")
+            
+            # 모든 매장에 대한 Future 객체 생성
+            future_to_store = {
+                executor.submit(self._fetch_store_data, store, end_iso, days): store
+                for store in stores
+            }
+            
+            rows = []
+            completed_count = 0
+            
+            # as_completed를 사용하여 완료되는 대로 결과 수집
+            for future in as_completed(future_to_store):
+                store = future_to_store[future]
+                completed_count += 1
+                
+                try:
+                    store_data = future.result()
+                    rows.append(store_data)
+                    self.logger.info(f"{days}일 데이터 수집 완료 ({completed_count}/{len(stores)}): {store}")
+                except Exception as e:
+                    self.logger.error(f"{days}일 데이터 수집 실패 ({completed_count}/{len(stores)}): {store}, {e}")
+                    # 실패한 경우 기본값으로 추가
+                    rows.append({
+                        "site": store,
+                        "curr_total": None,
+                        "prev_total": None,
+                        "weekday_delta_pct": None,
+                        "weekend_delta_pct": None,
+                        "total_delta_pct": None,
+                    })
+            
+            self.logger.info(f"{days}일 기간 데이터 병렬 수집 완료: {len(rows)}개 매장")
+            return rows
+
+    def _fetch_store_data(self, store: str, end_iso: str, days: int) -> Dict[str, Optional[float]]:
+        """단일 매장의 데이터 수집"""
+        try:
+            summ = summarize_period_rates(store, end_iso, days)
+            return {
+                "site": summ.get("site", store),
+                "curr_total": summ.get("curr_total"),
+                "prev_total": summ.get("prev_total"),
+                "weekday_delta_pct": summ.get("weekday_delta_pct"),
+                "weekend_delta_pct": summ.get("weekend_delta_pct"),
+                "total_delta_pct": summ.get("total_delta_pct"),
+            }
+        except Exception as e:
+            self.logger.warning(f"요약 수집 실패: {store}, {e}")
+            return {
+                "site": store,
+                "curr_total": None,
+                "prev_total": None,
+                "weekday_delta_pct": None,
+                "weekend_delta_pct": None,
+                "total_delta_pct": None,
+            }
+
     def _generate_html_node(self, state: SummaryReportState) -> SummaryReportState:
-        end_iso = state["end_date"]
-        sections: List[str] = []
-        
-        # 디버깅을 위한 로그 추가
-        llm_summary = state.get("llm_summary", "")
-        self.logger.info(f"HTML 생성 시 llm_summary 길이: {len(llm_summary)}")
-        self.logger.info(f"HTML 생성 시 llm_summary 내용: {llm_summary[:200]}...")
-        
-        for days in state["periods"]:
-            rows = state["rows_by_period"].get(days, [])
-            sections.append(
-                self._build_tab_section_html(
-                    section_id=f"section-{days}",
-                    title_suffix=f"최근 {days}일 vs 이전 {days}일",
-                    end_iso=end_iso,
-                    days=days,
-                    rows=rows,
-                    llm_summary=llm_summary,
-                    state=state,
+        with timer("HTML_생성"):
+            end_iso = state["end_date"]
+            sections: List[str] = []
+            
+            # 디버깅을 위한 로그 추가
+            llm_summary = state.get("llm_summary", "")
+            self.logger.info(f"HTML 생성 시 llm_summary 길이: {len(llm_summary)}")
+            self.logger.info(f"HTML 생성 시 llm_summary 내용: {llm_summary[:200]}...")
+            
+            for days in state["periods"]:
+                rows = state["rows_by_period"].get(days, [])
+                sections.append(
+                    self._build_tab_section_html(
+                        section_id=f"section-{days}",
+                        title_suffix=f"최근 {days}일 vs 이전 {days}일",
+                        end_iso=end_iso,
+                        days=days,
+                        rows=rows,
+                        llm_summary=llm_summary,
+                        state=state,
+                    )
                 )
-            )
 
         body_html = "\n".join(sections)
         
@@ -303,8 +398,9 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         return state
 
     def _summarize_node(self, state: SummaryReportState) -> SummaryReportState:
-        # LLM 요약을 위한 테이블 텍스트 구성(간결·일관된 포맷)
-        base_days = min(state["periods"]) if state["periods"] else 7
+        with timer("LLM_요약_생성"):
+            # LLM 요약을 위한 테이블 텍스트 구성(간결·일관된 포맷)
+            base_days = min(state["periods"]) if state["periods"] else 7
         
         if state["compare_lag"] == 7 and base_days == 1:
             # 일자별 모드: 평일/주말 구분 없음
@@ -337,73 +433,108 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
                     )
                 )
 
-        table_text = "\n".join(lines)
-        prompt = self._summary_prompt_tpl.format(table_text=table_text)
-        
-        # 디버깅을 위한 로그 추가
-        self.logger.info(f"LLM 요약 프롬프트 생성: {len(table_text)} 문자")
-        self.logger.info(f"테이블 데이터: {table_text}")
-        print(f"=== 테이블 데이터 ===")
-        print(table_text)
-        print(f"===================")
-        
-        try:
-            resp = self.llm.invoke(prompt)
-            content = (resp.content or "").strip()
-            state["llm_summary"] = content
+            table_text = "\n".join(lines)
+            
+            prompt = self._summary_prompt_tpl.format(table_text=table_text)
             
             # 디버깅을 위한 로그 추가
-            self.logger.info(f"LLM 응답 성공: {len(content)} 문자")
-            self.logger.info(f"LLM 응답 내용: {content[:200]}...")
+            self.logger.info(f"LLM 요약 프롬프트 생성: {len(table_text)} 문자")
+            self.logger.info(f"테이블 데이터: {table_text}")
+            print(f"=== 테이블 데이터 ===")
+            print(table_text)
+            print(f"===================")
             
-        except Exception as e:
-            self.logger.error(f"LLM 요약 실패: {e}")
-            state["llm_summary"] = "요약 생성 실패"
+            with timer("LLM_API_호출"):
+                try:
+                    resp = self.llm.invoke(prompt)
+                    content = (resp.content or "").strip()
+                    state["llm_summary"] = content
+                    
+                    # 디버깅을 위한 로그 추가
+                    self.logger.info(f"LLM 응답 성공: {len(content)} 문자")
+                    self.logger.info(f"LLM 응답 내용: {content[:200]}...")
+                    
+                    # 1일 모드일 때 액션도 생성
+                    if state["compare_lag"] == 7 and base_days == 1:
+                        try:
+                            action_prompt = self._action_prompt_tpl.format(table_text=table_text)
+                            action_resp = self.llm.invoke(action_prompt)
+                            action_content = (action_resp.content or "").strip()
+                            state["llm_action"] = action_content
+                            self.logger.info(f"LLM 액션 생성 성공: {len(action_content)} 문자")
+                        except Exception as e:
+                            self.logger.error(f"LLM 액션 생성 실패: {e}")
+                            state["llm_action"] = "액션 생성 실패"
+                    else:
+                        state["llm_action"] = ""
+                    
+                except Exception as e:
+                    self.logger.error(f"LLM 요약 실패: {e}")
+                    state["llm_summary"] = "요약 생성 실패"
+                    state["llm_action"] = ""
         
         return state
 
     def _save_node(self, state: SummaryReportState) -> SummaryReportState:
-        html = state.get("html_content", "")
-        if not html:
-            state["final_result"] = "HTML 콘텐츠가 없음"
-            return state
+        with timer("파일_저장"):
+            html = state.get("html_content", "")
+            if not html:
+                state["final_result"] = "HTML 콘텐츠가 없음"
+                return state
 
-        # 중앙 설정에서 경로 가져오기
-        from libs.html_output_config import get_full_html_path
-        
-        # 저장 경로: 1일은 daily, 7일은 weekly
-        if state["periods"] == [1]:
-            report_type = 'visitor_daily'
-        else:
-            report_type = 'visitor_weekly'
-        
-        out_path, latest_path = get_full_html_path(
-            report_type=report_type,
-            end_date=state['end_date'],
-            use_unified=False  # 각 폴더별로 분리
-        )
-        try:
-            with open(out_path, "w", encoding="utf-8") as f:
-                f.write(html)
-            try:
-                from shutil import copyfile
-                copyfile(out_path, latest_path)
-            except Exception:
-                pass
-            web_url = f"/reports/weekly/{os.path.basename(out_path)}"
-            state["final_result"] = (
-                "📊 방문 현황 요약 통계 생성 완료!\n\n" f"🔗 [웹에서 보기]({web_url})\n\n" + (state.get("llm_summary", "") or "")
+            # 중앙 설정에서 경로 가져오기
+            from libs.html_output_config import get_full_html_path
+            
+            # 저장 경로: 1일은 daily, 7일은 weekly
+            if state["periods"] == [1]:
+                report_type = 'visitor_daily'
+            else:
+                report_type = 'visitor_weekly'
+            
+            out_path, latest_path = get_full_html_path(
+                report_type=report_type,
+                end_date=state['end_date'],
+                use_unified=False  # 각 폴더별로 분리
             )
-        except Exception as e:
-            self.logger.error(f"HTML 저장 실패: {e}")
-            state["final_result"] = f"HTML 저장 실패: {e}"
+            try:
+                with open(out_path, "w", encoding="utf-8") as f:
+                    f.write(html)
+                try:
+                    from shutil import copyfile
+                    copyfile(out_path, latest_path)
+                except Exception:
+                    pass
+                web_url = f"/reports/weekly/{os.path.basename(out_path)}"
+                state["final_result"] = (
+                    "📊 방문 현황 요약 통계 생성 완료!\n\n" f"🔗 [웹에서 보기]({web_url})\n\n" + (state.get("llm_summary", "") or "")
+                )
+            except Exception as e:
+                self.logger.error(f"HTML 저장 실패: {e}")
+                state["final_result"] = f"HTML 저장 실패: {e}"
+        
         return state
 
     # ----------------------------- HTML Builders -----------------------------
     def _build_tab_section_html(self, *, section_id: str, title_suffix: str, end_iso: str, days: int, rows: List[Dict[str, Optional[float]]], llm_summary: str, state: SummaryReportState) -> str:
         rows_sorted = sorted(rows, key=lambda r: (0 if r.get("total_delta_pct") is not None else 1, -(r.get("total_delta_pct") or 0)))
-        return (
-            """
+        
+        # 1일 모드: 요약, 액션, 방문객증감요약, 매장성과 4개 카드만
+        if state["compare_lag"] == 7 and days == 1:
+            template = """
+<section id="{section_id}" class="tab-section" data-period="{section_id}">
+  {summary}
+  {action}
+  {table}
+  {scatter}
+</section>
+"""
+            result = template.replace("{section_id}", section_id)\
+             .replace("{summary}", self._build_summary_card_html(rows_sorted, llm_summary))\
+             .replace("{action}", self._build_action_card_html(rows_sorted, state["llm_action"]))\
+             .replace("{table}", self._build_table_html(rows_sorted, end_iso, days, state))\
+             .replace("{scatter}", self._build_scatter_card_html(rows_sorted))
+        else:
+            template = """
 <section id="{section_id}" class="tab-section" data-period="{section_id}">
   {summary}
   {table}
@@ -412,12 +543,14 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
   {explain}
 </section>
 """
-        ).replace("{section_id}", section_id)\
-         .replace("{summary}", self._build_summary_card_html(rows_sorted, llm_summary))\
-         .replace("{table}", self._build_table_html(rows_sorted, end_iso, days, state))\
-         .replace("{scatter}", self._build_scatter_card_html(rows_sorted))\
-         .replace("{next}", self._build_next_actions_card_html(rows_sorted, llm_summary, end_iso))\
-         .replace("{explain}", self._build_explanation_card_html(title_suffix))
+            result = template.replace("{section_id}", section_id)\
+             .replace("{summary}", self._build_summary_card_html(rows_sorted, llm_summary))\
+             .replace("{table}", self._build_table_html(rows_sorted, end_iso, days, state))\
+             .replace("{scatter}", self._build_scatter_card_html(rows_sorted))\
+             .replace("{next}", self._build_next_actions_card_html(rows_sorted, llm_summary, end_iso))\
+             .replace("{explain}", self._build_explanation_card_html(title_suffix))
+            
+        return result
 
     def _build_html_page(self, *, title: str, body_html: str, periods: List[int]) -> str:
         # labels_html, inputs_html, css_rules = self._build_tabs(periods)
@@ -867,6 +1000,46 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
 </section>
 """
 
+    def _build_action_card_html(self, rows: List[Dict[str, Optional[float]]], llm_action: str) -> str:
+        """액션 카드 HTML 생성 (1일 모드 전용)"""
+        # LLM 액션을 HTML로 렌더링
+        if llm_action and llm_action.strip():
+            raw = llm_action.strip()
+            # 코드펜스 제거
+            if raw.startswith("```") and raw.endswith("```"):
+                raw = "\n".join(raw.splitlines()[1:-1]).strip()
+            # HTML 그대로 사용
+            if "<ul" in raw and "<li" in raw:
+                content = raw
+            else:
+                # 마크다운 불릿을 HTML li 태그로 변환
+                lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+                items = []
+                for ln in lines:
+                    if ln.startswith("- "):
+                        items.append(ln[2:].strip())
+                    else:
+                        items.append(ln)
+                li_html = "\n".join(f"<li>{self._escape_html(it)}</li>" for it in items)
+                content = f"<ul class=\"action-list\">{li_html}</ul>"
+        else:
+            content = """
+            <div style="text-align: center; padding: 12px; color: #6b7280;">
+              <p style="margin: 0; font-size: 14px;">📋 <strong>권장 액션</strong></p>
+              <p style="margin: 6px 0 0 0; font-size: 12px;">당일 데이터 기반<br>즉시 실행 가능한 액션을 제공합니다</p>
+            </div>
+            """
+
+        return f"""
+<section class="card">
+  <h3 style="margin: 0 0 8px 0;">액션</h3>
+  <div style="margin-top: 0;">
+    {content}
+  </div>
+  <!-- section:action -->
+</section>
+"""
+
     def _build_table_html(self, rows: List[Dict[str, Optional[float]]], end_iso: str, days: int, state: SummaryReportState) -> str:
         # 공통 스케일 계산을 위해 모든 시리즈 수집
         collected: List[Tuple[Dict[str, Optional[float]], RenderSeries]] = []
@@ -936,8 +1109,10 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         
         # periods=1이면 단일 날짜, 아니면 범위 표시
         if state["compare_lag"] == 7 and days == 1:
-            curr_range = curr_end.isoformat()
-            prev_range = prev_end.isoformat()
+            curr_weekday = self._get_weekday_korean(curr_end.isoformat())
+            prev_weekday = self._get_weekday_korean(prev_end.isoformat())
+            curr_range = f"{curr_end.isoformat()}({curr_weekday[0]})"
+            prev_range = f"{prev_end.isoformat()}({prev_weekday[0]})"
         else:
             curr_range = f"{curr_start.isoformat()}<br>~ {curr_end.isoformat()}"
             prev_range = f"{prev_start.isoformat()}<br>~ {prev_end.isoformat()}"
@@ -958,7 +1133,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
           <th>{period_label} 방문객<div class=\"col-note\">{curr_range}</div></th>
           <th>{prev_label} 방문객<div class=\"col-note\">{prev_range}</div></th>
           <th>증감률</th>
-          <th>주간 증감률 추이</th>
+          <th>주간 증감률 추이<br><div class=\"col-note\">(전주 동일 요일 대비 방문 증감률 기준)</div></th>
         </tr>
       </thead>
       <tbody>

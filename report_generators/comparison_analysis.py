@@ -13,6 +13,7 @@ import os
 from datetime import date, timedelta
 from typing import Dict, List, Any, Union, Sequence
 from dataclasses import dataclass
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -142,52 +143,78 @@ class ComparisonAnalysisGenerator(BaseWorkflow[ComparisonAnalysisState]):
         return builder.compile()
 
     def _extract_data_node(self, state: ComparisonAnalysisState) -> ComparisonAnalysisState:
-        """데이터 추출 노드"""
+        """데이터 추출 노드 (병렬 처리)"""
         stores = state["stores"]
         end_date = state["end_date"]
         period = state["period"]
         analysis_type = state["analysis_type"]
         
-        self.logger.info(f"데이터 추출 시작: {len(stores)}개 매장, {period}일")
+        self.logger.info(f"병렬 데이터 추출 시작: {len(stores)}개 매장, {period}일")
         
-        # 1. 일별 방문추이 데이터
-        if analysis_type in ["daily_trends", "all"]:
-            state["daily_trends_data"] = {}
-            for store in stores:
-                try:
-                    data = self.extractor.extract_daily_trends(store, end_date, period)
-                    state["daily_trends_data"][store] = data
-                    self.logger.info(f"일별 방문추이 데이터 추출 완료: {store}")
-                except Exception as e:
-                    self.logger.error(f"일별 방문추이 데이터 추출 실패: {store}, {e}")
-                    state["daily_trends_data"][store] = {"error": str(e)}
+        # 병렬 처리를 위한 워커 수 설정 (매장 수와 CPU 코어 수 중 작은 값)
+        max_workers = min(len(stores), os.cpu_count() or 4)
         
-        # 2. 고객 구성 데이터
-        if analysis_type in ["customer_composition", "all"]:
-            state["customer_composition_data"] = {}
-            for store in stores:
-                try:
-                    data = self.extractor.extract_customer_composition(store, end_date, period)
-                    state["customer_composition_data"][store] = data
-                    self.logger.info(f"고객 구성 데이터 추출 완료: {store}")
-                except Exception as e:
-                    self.logger.error(f"고객 구성 데이터 추출 실패: {store}, {e}")
-                    state["customer_composition_data"][store] = {"error": str(e)}
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # 1. 일별 방문추이 데이터
+            if analysis_type in ["daily_trends", "all"]:
+                state["daily_trends_data"] = self._extract_parallel(
+                    executor, stores, self.extractor.extract_daily_trends, 
+                    end_date, period, "일별 방문추이"
+                )
+            
+            # 2. 고객 구성 데이터
+            if analysis_type in ["customer_composition", "all"]:
+                state["customer_composition_data"] = self._extract_parallel(
+                    executor, stores, self.extractor.extract_customer_composition,
+                    end_date, period, "고객 구성"
+                )
+            
+            # 3. 시간대/연령대 패턴 데이터
+            if analysis_type in ["time_age_pattern", "all"]:
+                state["time_age_pattern_data"] = self._extract_parallel(
+                    executor, stores, self.extractor.extract_time_age_pattern,
+                    end_date, period, "시간대/연령대 패턴"
+                )
         
-        # 3. 시간대/연령대 패턴 데이터
-        if analysis_type in ["time_age_pattern", "all"]:
-            state["time_age_pattern_data"] = {}
-            for store in stores:
-                try:
-                    data = self.extractor.extract_time_age_pattern(store, end_date, period)
-                    state["time_age_pattern_data"][store] = data
-                    self.logger.info(f"시간대/연령대 패턴 데이터 추출 완료: {store}")
-                except Exception as e:
-                    self.logger.error(f"시간대/연령대 패턴 데이터 추출 실패: {store}, {e}")
-                    state["time_age_pattern_data"][store] = {"error": str(e)}
-        
-        self.logger.info("데이터 추출 완료")
+        self.logger.info("병렬 데이터 추출 완료")
         return state
+
+    def _extract_parallel(
+        self, 
+        executor: ThreadPoolExecutor, 
+        stores: List[str], 
+        extract_func: callable, 
+        end_date: str, 
+        period: int, 
+        data_type: str
+    ) -> Dict[str, Dict[str, Any]]:
+        """병렬로 매장별 데이터 추출"""
+        self.logger.info(f"{data_type} 데이터 병렬 추출 시작: {len(stores)}개 매장")
+        
+        # 모든 매장에 대한 Future 객체 생성
+        future_to_store = {
+            executor.submit(extract_func, store, end_date, period): store 
+            for store in stores
+        }
+        
+        results = {}
+        completed_count = 0
+        
+        # as_completed를 사용하여 완료되는 대로 결과 수집
+        for future in as_completed(future_to_store):
+            store = future_to_store[future]
+            completed_count += 1
+            
+            try:
+                data = future.result()
+                results[store] = data
+                self.logger.info(f"{data_type} 데이터 추출 완료 ({completed_count}/{len(stores)}): {store}")
+            except Exception as e:
+                self.logger.error(f"{data_type} 데이터 추출 실패 ({completed_count}/{len(stores)}): {store}, {e}")
+                results[store] = {"error": str(e)}
+        
+        self.logger.info(f"{data_type} 데이터 병렬 추출 완료: {len(results)}개 매장")
+        return results
 
     def _generate_charts_node(self, state: ComparisonAnalysisState) -> ComparisonAnalysisState:
         """차트 생성 노드"""
