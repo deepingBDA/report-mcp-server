@@ -92,14 +92,7 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
         """
         # 입력 정규화
         if isinstance(stores, str):
-            # "all" stores 처리
-            if stores.lower().strip() == "all":
-                from libs.database import get_all_sites
-                stores_list = get_all_sites()
-                if not stores_list:
-                    raise ValueError("전체 매장 목록을 가져올 수 없습니다")
-            else:
-                stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
+            stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
         else:
             stores_list = [str(s).strip() for s in stores if str(s).strip()]
         
