@@ -14,7 +14,19 @@ class ReportGeneratorService:
     def normalize_stores_list(stores: Union[str, List[str]]) -> List[str]:
         """Convert stores to normalized list format."""
         if isinstance(stores, str):
-            return [s.strip() for s in stores.split(",") if s.strip()]
+            # "all" 특별 처리
+            if stores.lower().strip() == "all":
+                from libs.database import get_all_sites
+                print(f"🔍 normalize_stores_list: 'all' 매장 파라미터 감지, 전체 매장 목록 조회 중...")
+                stores_list = get_all_sites()
+                print(f"🏪 normalize_stores_list: 조회된 매장 목록: {stores_list}")
+                if not stores_list:
+                    print("❌ normalize_stores_list: 전체 매장 목록을 가져올 수 없습니다")
+                    raise ValueError("전체 매장 목록을 가져올 수 없습니다")
+                print(f"✅ normalize_stores_list: {len(stores_list)}개 매장으로 설정됨")
+                return stores_list
+            else:
+                return [s.strip() for s in stores.split(",") if s.strip()]
         return [str(s).strip() for s in stores if str(s).strip()]
     
     @staticmethod
