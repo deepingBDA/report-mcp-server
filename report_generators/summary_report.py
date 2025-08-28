@@ -88,7 +88,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         super().__init__(workflow_name="summary_report")
         load_dotenv()
         # gpt-4o로 변경 (성능 최적화)
-        self.llm = ChatOpenAI(model="gpt-5")
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         # 7일 모드용 기존 프롬프트 (복원)
         self._summary_prompt_tpl = (
             """
