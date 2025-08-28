@@ -165,19 +165,9 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         periods: int = 7,
         compare_lag: Optional[int] = None,
     ) -> str:
-        # 입력 정규화
+        # 입력 정규화 (이미 ReportGeneratorService.normalize_stores_list에서 처리됨)
         if isinstance(stores, str):
-            if stores.lower().strip() == "all":
-                # "all"인 경우 모든 매장 목록 가져오기
-                print(f"🔍 'all' 매장 파라미터 감지, 전체 매장 목록 조회 중...")
-                stores_list = get_all_sites()
-                print(f"🏪 조회된 매장 목록: {stores_list}")
-                if not stores_list:
-                    print("❌ 전체 매장 목록을 가져올 수 없습니다")
-                    raise ValueError("전체 매장 목록을 가져올 수 없습니다")
-                print(f"✅ {len(stores_list)}개 매장으로 설정됨")
-            else:
-                stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
+            stores_list = [s.strip() for s in stores.replace("，", ",").split(",") if s.strip()]
         else:
             stores_list = [str(s).strip() for s in stores if str(s).strip()]
         if not stores_list:
