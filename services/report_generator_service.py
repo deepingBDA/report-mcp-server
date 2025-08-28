@@ -20,10 +20,16 @@ class ReportGeneratorService:
                 print(f"🔍 normalize_stores_list: 'all' 매장 파라미터 감지, 전체 매장 목록 조회 중...")
                 stores_list = get_all_sites()
                 print(f"🏪 normalize_stores_list: 조회된 매장 목록: {stores_list}")
+                
+                # 망우혜원점 제외 (접근 불가)
+                if "망우혜원점" in stores_list:
+                    stores_list.remove("망우혜원점")
+                    print(f"⚠️ normalize_stores_list: 망우혜원점 제외됨 (접근 불가)")
+                
                 if not stores_list:
-                    print("❌ normalize_stores_list: 전체 매장 목록을 가져올 수 없습니다")
-                    raise ValueError("전체 매장 목록을 가져올 수 없습니다")
-                print(f"✅ normalize_stores_list: {len(stores_list)}개 매장으로 설정됨")
+                    print("❌ normalize_stores_list: 사용 가능한 매장이 없습니다")
+                    raise ValueError("사용 가능한 매장이 없습니다")
+                print(f"✅ normalize_stores_list: {len(stores_list)}개 매장으로 설정됨: {stores_list}")
                 return stores_list
             else:
                 return [s.strip() for s in stores.split(",") if s.strip()]
