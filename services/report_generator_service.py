@@ -1,4 +1,4 @@
-"""Workflow service for handling workflow execution logic."""
+"""Report generator service for handling report generation logic."""
 
 import os
 import logging
@@ -7,8 +7,8 @@ from typing import Dict, List, Union, Any
 logger = logging.getLogger(__name__)
 
 
-class WorkflowService:
-    """Service class for workflow operations."""
+class ReportGeneratorService:
+    """Service class for report generation operations."""
     
     @staticmethod
     def normalize_stores_list(stores: Union[str, List[str]]) -> List[str]:
@@ -18,26 +18,24 @@ class WorkflowService:
         return [str(s).strip() for s in stores if str(s).strip()]
     
     @staticmethod
-    def execute_summary_report(
+    def generate_summary_report(
         data_type: str,
         end_date: str,
         stores: List[str],
-        periods: int,
-        user_prompt: str
+        periods: int
     ) -> Dict[str, Any]:
-        """Execute summary report workflow."""
+        """Generate summary report."""
         try:
-            from workflows.summary_report import SummaryReportWorkflow
+            from report_generators.summary_report import SummaryReportGenerator
             
-            workflow = SummaryReportWorkflow()
+            generator = SummaryReportGenerator()
             
-            # Run the workflow
-            workflow_result = workflow.run(
+            # Generate the report
+            report_result = generator.run(
                 data_type=data_type,
                 end_date=end_date,
                 stores=stores,
-                periods=periods,
-                user_prompt=user_prompt
+                periods=periods
             )
             
             # Try to read the generated HTML file
@@ -57,14 +55,14 @@ class WorkflowService:
                         "result": "HTML 보고서 생성 및 반환 완료",
                         "html_content": html_content,
                         "file_path": latest_path,
-                        "workflow_summary": workflow_result
+                        "generation_summary": report_result
                     }
                 else:
                     return {
-                        "result": workflow_result,
+                        "result": report_result,
                         "html_content": None,
                         "file_path": None,
-                        "workflow_summary": "HTML 파일을 찾을 수 없음"
+                        "generation_summary": "HTML 파일을 찾을 수 없음"
                     }
                     
             except Exception as e:
@@ -73,34 +71,32 @@ class WorkflowService:
                     "result": workflow_result,
                     "html_content": None,
                     "file_path": None,
-                    "workflow_summary": f"HTML 파일 처리 오류: {e}"
+                    "generation_summary": f"HTML 파일 처리 오류: {e}"
                 }
                 
         except Exception as e:
-            logger.error(f"Summary report workflow 실행 실패: {e}")
+            logger.error(f"Summary report generation 실행 실패: {e}")
             raise
     
     @staticmethod
-    def execute_comparison_analysis(
+    def generate_comparison_analysis(
         stores: List[str],
         end_date: str,
         period: int,
-        analysis_type: str,
-        user_prompt: str
+        analysis_type: str
     ) -> Dict[str, Any]:
-        """Execute comparison analysis workflow."""
+        """Generate comparison analysis report."""
         try:
-            from workflows.comparison_analysis import ComparisonAnalysisWorkflow
+            from report_generators.comparison_analysis import ComparisonAnalysisGenerator
             
-            workflow = ComparisonAnalysisWorkflow()
+            generator = ComparisonAnalysisGenerator()
             
-            # Run the workflow
-            workflow_result = workflow.run(
+            # Generate the report
+            report_result = generator.run(
                 stores=stores,
                 end_date=end_date,
                 period=period,
-                analysis_type=analysis_type,
-                user_prompt=user_prompt
+                analysis_type=analysis_type
             )
             
             # Try to read the generated HTML file
@@ -117,14 +113,14 @@ class WorkflowService:
                         "result": "HTML 비교 분석 보고서 생성 및 반환 완료",
                         "html_content": html_content,
                         "file_path": latest_path,
-                        "workflow_summary": workflow_result
+                        "generation_summary": report_result
                     }
                 else:
                     return {
-                        "result": workflow_result,
+                        "result": report_result,
                         "html_content": None,
                         "file_path": None,
-                        "workflow_summary": "HTML 파일을 찾을 수 없음"
+                        "generation_summary": "HTML 파일을 찾을 수 없음"
                     }
                     
             except Exception as e:
@@ -133,9 +129,9 @@ class WorkflowService:
                     "result": workflow_result,
                     "html_content": None,
                     "file_path": None,
-                    "workflow_summary": f"HTML 파일 처리 오류: {e}"
+                    "generation_summary": f"HTML 파일 처리 오류: {e}"
                 }
             
         except Exception as e:
-            logger.error(f"Comparison analysis workflow 실행 실패: {e}")
+            logger.error(f"Comparison analysis generation 실행 실패: {e}")
             raise

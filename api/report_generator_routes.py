@@ -1,13 +1,13 @@
-"""Workflow API routes."""
+"""Report generator API routes."""
 
 import logging
 from fastapi import APIRouter, HTTPException
 
 from models.request_models import SummaryReportRequest, ComparisonAnalysisRequest
-from services.workflow_service import WorkflowService
+from services.report_generator_service import ReportGeneratorService
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/mcp/tools/workflow", tags=["workflow"])
+router = APIRouter(prefix="/mcp/tools/report-generator", tags=["report-generator"])
 
 
 @router.post("/summary-report-html")
@@ -17,22 +17,21 @@ async def summary_report_html(request: SummaryReportRequest):
     
     try:
         # Normalize stores list
-        stores_list = WorkflowService.normalize_stores_list(request.stores)
+        stores_list = ReportGeneratorService.normalize_stores_list(request.stores)
         
-        # Execute workflow
-        result = WorkflowService.execute_summary_report(
+        # Generate report
+        result = ReportGeneratorService.generate_summary_report(
             data_type=request.data_type or "visitor",
             end_date=request.end_date,
             stores=stores_list,
-            periods=(request.periods[0] if request.periods else 1),
-            user_prompt=request.user_prompt or "요약 리포트 생성(HTML)"
+            periods=(request.periods[0] if request.periods else 1)
         )
         
         return result
         
     except Exception as e:
-        logger.error(f"Summary report workflow 실행 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"워크플로우 실행 실패: {e}")
+        logger.error(f"Summary report generation 실행 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"리포트 생성 실패: {e}")
 
 
 @router.post("/comparison-analysis-html")
@@ -42,19 +41,18 @@ async def comparison_analysis_html(request: ComparisonAnalysisRequest):
     
     try:
         # Normalize stores list
-        stores_list = WorkflowService.normalize_stores_list(request.stores)
+        stores_list = ReportGeneratorService.normalize_stores_list(request.stores)
         
-        # Execute workflow
-        result = WorkflowService.execute_comparison_analysis(
+        # Generate report
+        result = ReportGeneratorService.generate_comparison_analysis(
             stores=stores_list,
             end_date=request.end_date,
             period=request.period or 7,
-            analysis_type=request.analysis_type or "all",
-            user_prompt=request.user_prompt or "매장 비교 분석 리포트"
+            analysis_type=request.analysis_type or "all"
         )
         
         return result
         
     except Exception as e:
-        logger.error(f"Comparison analysis workflow 실행 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"워크플로우 실행 실패: {e}")
+        logger.error(f"Comparison analysis generation 실행 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"리포트 생성 실패: {e}")

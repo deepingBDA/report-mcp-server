@@ -65,7 +65,7 @@ class RenderSeries:
     total: List[float]
 
 
-class SummaryReportWorkflow(BaseWorkflow[SummaryReportState]):
+class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
     def __init__(self) -> None:
         super().__init__(workflow_name="summary_report")
         load_dotenv()
@@ -164,7 +164,6 @@ class SummaryReportWorkflow(BaseWorkflow[SummaryReportState]):
         stores: Union[str, Sequence[str]],
         periods: int = 7,
         compare_lag: Optional[int] = None,
-        user_prompt: str = "주간 방문 리포트",
     ) -> str:
         # 입력 정규화
         if isinstance(stores, str):
@@ -195,7 +194,6 @@ class SummaryReportWorkflow(BaseWorkflow[SummaryReportState]):
             prev_label = f"전주{lag_val}일" if lag_val == 7 else f"전기간{lag_val}일"
         
         initial_state: SummaryReportState = {
-            "user_prompt": user_prompt,
             "workflow_id": f"{self.workflow_name}_{end_iso}",
             "timestamp": date.today().isoformat(),
             "data_type": data_type.lower(),
@@ -1618,7 +1616,6 @@ def summary_report_html(
     end_date: str,
     stores: str | list[str],
     periods: list[int] | None = None,
-    user_prompt: str = "요약 리포트 생성(HTML)"
 ) -> str:
     """
     [SUMMARY_REPORT] Generate a summary report HTML using the specified data type.
@@ -1629,10 +1626,9 @@ def summary_report_html(
     - end_date: 기준일(YYYY-MM-DD)
     - stores: 매장 목록(문자열 콤마 구분 또는 리스트)
     - periods: 분석 기간(일) 목록(기본값: [7])
-    - user_prompt: 커스텀 프롬프트(선택)
     """
     wf = SummaryReportWorkflow()
-    return wf.run(data_type=data_type, end_date=end_date, stores=stores, periods=periods, user_prompt=user_prompt)
+    return wf.run(data_type=data_type, end_date=end_date, stores=stores, periods=periods)
 
 
 if __name__ == "__main__":

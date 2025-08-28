@@ -54,8 +54,8 @@ class AnalysisResult:
     chart: str
 
 
-class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
-    """비교분석 워크플로우 클래스"""
+class ComparisonAnalysisGenerator(BaseWorkflow[ComparisonAnalysisState]):
+    """비교분석 리포트 생성기 클래스"""
 
     def __init__(self):
         super().__init__(workflow_name="comparison_analysis")
@@ -78,7 +78,6 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
         end_date: str,
         period: int = 7,
         analysis_type: str = "all",
-        user_prompt: str = "매장 비교 분석 리포트"
     ) -> str:
         """
         비교분석 워크플로우 실행
@@ -88,7 +87,6 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
             end_date: 기준일 (YYYY-MM-DD)
             period: 분석 기간 (일)
             analysis_type: 분석 타입 ("daily_trends", "customer_composition", "time_age_pattern", "all")
-            user_prompt: 커스텀 프롬프트
         """
         # 입력 정규화
         if isinstance(stores, str):
@@ -104,7 +102,6 @@ class ComparisonAnalysisWorkflow(BaseWorkflow[ComparisonAnalysisState]):
         
         # 초기 상태 생성
         initial_state: ComparisonAnalysisState = {
-            "user_prompt": user_prompt,
             "workflow_id": f"{self.workflow_name}_{end_iso}",
             "timestamp": date.today().isoformat(),
             "stores": stores_list,
@@ -566,7 +563,6 @@ def comparison_analysis_html(
     end_date: str,
     period: int = 7,
     analysis_type: str = "all",
-    user_prompt: str = "매장 비교 분석 리포트"
 ) -> str:
     """
     [COMPARISON_ANALYSIS] Generate a comparison analysis HTML report for multiple stores.
@@ -577,15 +573,13 @@ def comparison_analysis_html(
     - end_date: 기준일(YYYY-MM-DD)
     - period: 분석 기간(일, 기본값: 7)
     - analysis_type: 분석 타입 ("daily_trends", "customer_composition", "time_age_pattern", "all")
-    - user_prompt: 커스텀 프롬프트(선택)
     """
-    wf = ComparisonAnalysisWorkflow()
-    return wf.run(
+    generator = ComparisonAnalysisGenerator()
+    return generator.run(
         stores=stores,
         end_date=end_date,
         period=period,
         analysis_type=analysis_type,
-        user_prompt=user_prompt
     )
 
 
@@ -601,8 +595,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.cli:
-        wf = ComparisonAnalysisWorkflow()
-        result = wf.run(
+        generator = ComparisonAnalysisGenerator()
+        result = generator.run(
             stores=args.stores,
             end_date=args.end,
             period=args.period,
