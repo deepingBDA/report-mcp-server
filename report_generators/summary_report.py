@@ -413,7 +413,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             # LLM 요약을 위한 테이블 텍스트 구성(간결·일관된 포맷)
             base_days = min(state["periods"]) if state["periods"] else 7
         
-        if state["compare_lag"] == 7 and base_days == 1:
+        if base_days == 1:
             # 일자별 모드: 평일/주말 구분 없음
             lines: List[str] = [f"매장명\t{state['period_label']}방문객\t{state['prev_label']}방문객\t증감%"]
             for r in state["rows_by_period"].get(base_days, []):
@@ -447,7 +447,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             table_text = "\n".join(lines)
             
             # 1일 모드와 7일 모드에 따라 다른 프롬프트 사용
-            if state["compare_lag"] == 7 and base_days == 1:
+            if base_days == 1:
                 prompt = self._summary_daily_prompt_tpl.format(table_text=table_text)
                 print(f"DEBUG: 1일 모드 프롬프트 사용")
             else:
@@ -472,7 +472,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
                     self.logger.info(f"LLM 응답 내용: {content[:200]}...")
                     
                     # 1일 모드일 때 액션도 생성
-                    if state["compare_lag"] == 7 and base_days == 1:
+                    if base_days == 1:
                         try:
                             action_prompt = self._action_prompt_tpl.format(table_text=table_text)
                             action_resp = self.llm.invoke(action_prompt)
@@ -536,7 +536,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         rows_sorted = sorted(rows, key=lambda r: (0 if r.get("total_delta_pct") is not None else 1, -(r.get("total_delta_pct") or 0)))
         
         # 1일 모드: 요약, 액션, 방문객증감요약, 매장성과 4개 카드만
-        if state["compare_lag"] == 7 and days == 1:
+        if days == 1:
             template = """
 <section id="{section_id}" class="tab-section" data-period="{section_id}">
   {summary}
@@ -1069,7 +1069,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         for r in rows:
             site = str(r.get("site", ""))
             try:
-                if state["compare_lag"] == 7 and days == 1:
+                if days == 1:
                     # 1일 모드: 같은 요일 데이터만 가져와서 스파크라인 생성
                     weekly = fetch_same_weekday_series(site, end_iso, weeks=5)
                     s_tot = to_pct_series(weekly.get("total", []))[-4:] if len(weekly.get("total", [])) >= 4 else [0] * 4
@@ -1093,7 +1093,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
                     while len(s_tot) < 4:
                         s_tot.insert(0, 0.0)
             except Exception:
-                if state["compare_lag"] == 7 and days == 1:
+                if days == 1:
                     s_wd = [0.0] * 7
                     s_we = [0.0] * 7
                     s_tot = [0.0] * 7
@@ -1119,13 +1119,13 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         curr_end = end_d
         prev_start = end_d - timedelta(days=(2 * days - 1))
         # 1일 모드에서는 7일 전 같은 요일, 다른 모드에서는 기간만큼 이전
-        if state["compare_lag"] == 7 and days == 1:
+        if days == 1:
             prev_end = end_d - timedelta(days=7)  # 전주 같은 요일
         else:
             prev_end = end_d - timedelta(days=days)
         
         # periods=1이면 단일 날짜, 아니면 범위 표시
-        if state["compare_lag"] == 7 and days == 1:
+        if days == 1:
             curr_weekday = self._get_weekday_korean(curr_end.isoformat())
             prev_weekday = self._get_weekday_korean(prev_end.isoformat())
             curr_range = f"{curr_end.isoformat()}({curr_weekday[0]})"
@@ -1134,7 +1134,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             curr_range = f"{curr_start.isoformat()}<br>~ {curr_end.isoformat()}"
             prev_range = f"{prev_start.isoformat()}<br>~ {prev_end.isoformat()}"
         # periods=1일 때는 평일/주말 분류가 의미없으므로 컬럼 구조 변경
-        if state["compare_lag"] == 7 and days == 1:
+        if days == 1:
             period_type = "일자별"
             header_html = """
 <section class=\"card\">
@@ -1198,7 +1198,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         # 바디
         body_rows: List[str] = []
         for r, ser in collected:
-            if state["compare_lag"] == 7 and days == 1:
+            if days == 1:
                 # 일자별 모드: 총 증감률 + 7일 스파크라인 표시
                 row_html = """
         <tr>
