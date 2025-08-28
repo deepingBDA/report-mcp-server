@@ -87,8 +87,8 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
     def __init__(self) -> None:
         super().__init__(workflow_name="summary_report")
         load_dotenv()
-        # gpt-5-mini로 변경 (GPT-5 계열 중 가장 빠름)
-        self.llm = ChatOpenAI(model="gpt-5-mini")
+        # gpt-4o로 변경 (가장 빠른 성능)
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         # 7일 모드용 기존 프롬프트 (복원)
         self._summary_prompt_tpl = (
             """
