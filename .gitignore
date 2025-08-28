@@ -6,6 +6,8 @@ data/
 html_report/
 # C extensions
 *.so
+.claude/
+/results/logs/
 
 # Distribution / packaging
 .Python
