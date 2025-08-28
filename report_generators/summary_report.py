@@ -182,6 +182,11 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
             - 방문객 수는 높지만 증감률이 낮은 매장은 고객 유지 전략 필요
             - 방문객 수가 저조한 매장은 지역 맞춤 마케팅/이벤트 강화 필요
 
+            [출력 형식]
+            - 매장명: 액션 요약내용 텍스트
+
+            매장명과 액션 요약 텍스트를 제외하고는 다른 내용은 추가하지 않음
+
             데이터:
             {table_text}
             """
