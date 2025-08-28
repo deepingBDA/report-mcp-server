@@ -5,6 +5,7 @@ import uvicorn
 import logging
 
 from config.settings import get_server_config
+from backend import app  # Import app directly
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ def main():
     logger.info(f"Starting Report MCP Server on {config['host']}:{config['port']}")
     
     uvicorn.run(
-        "backend:app",
+        app,  # Use app directly instead of "backend:app" string
         host=config["host"],
         port=config["port"],
         reload=config["debug"],
