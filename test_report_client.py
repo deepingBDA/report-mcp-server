@@ -7,7 +7,7 @@ Report MCP Server 클라이언트 테스트
 import requests
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import webbrowser
 from pathlib import Path
 
@@ -44,11 +44,25 @@ class ReportClient:
         print(f"   Data: {json.dumps(payload, ensure_ascii=False, indent=2)}")
         
         try:
-            response = requests.post(url, json=payload, timeout=60)
+            response = requests.post(url, json=payload, timeout=200)
             response.raise_for_status()
             
             result = response.json()
             print(f"✅ 응답 성공: {result['result']}")
+            
+            # DEBUG: 응답 구조 확인
+            print(f"🔍 응답 키들: {list(result.keys())}")
+            
+            # 성능 데이터 출력
+            if result.get('performance'):
+                perf = result['performance']
+                print(f"\n⏱️  성능 측정 결과:")
+                print(f"   총 소요 시간: {perf['total_time']}초")
+                for measurement in perf['measurements']:
+                    print(f"   {measurement['name']:<25} {measurement['duration']:6.2f}초 ({measurement['percentage']:5.1f}%)")
+                print()
+            else:
+                print(f"⚠️  성능 데이터 없음: {result.get('performance')}")
             
             if result.get('html_content'):
                 # HTML 파일 저장
@@ -89,7 +103,7 @@ class ReportClient:
         print(f"   Data: {json.dumps(payload, ensure_ascii=False, indent=2)}")
         
         try:
-            response = requests.post(url, json=payload, timeout=60)
+            response = requests.post(url, json=payload, timeout=200)
             response.raise_for_status()
             
             result = response.json()
@@ -133,23 +147,14 @@ def main():
     
     print("\n" + "=" * 60)
     
-    # 2. Summary Report 테스트
-    print("📊 Summary Report 생성 테스트 (Daily - Period 1)")
+    # 2. Summary Report 테스트 (2025-04-30 기준, 모든 매장)
+    test_date = "2025-04-30"
+    print(f"📊 Visitor Summary Report 생성 테스트 (All stores - 기준일: {test_date})")
     summary_file = client.generate_summary_report(
         data_type="visitor",
-        end_date="2024-04-30",
+        end_date=test_date,
         stores="all",
-        periods=[1]
-    )
-    
-    print("\n" + "=" * 60)
-    
-    # 3. Comparison Report 테스트  
-    print("📈 Comparison Report 생성 테스트")
-    comparison_file = client.generate_comparison_report(
-        stores=["망우혜원점", "수원영통점"],
-        end_date="2024-04-30",
-        period=7
+        periods=[7]
     )
     
     print("\n" + "=" * 60)
@@ -157,8 +162,8 @@ def main():
     
     if summary_file:
         print(f"📄 Summary Report: {summary_file}")
-    if comparison_file:
-        print(f"📄 Comparison Report: {comparison_file}")
+    else:
+        print("❌ Summary Report 생성 실패")
     
     print(f"📁 모든 파일은 '{client.output_dir}' 폴더에 저장되었습니다.")
 

@@ -46,6 +46,11 @@ class ReportGeneratorService:
         try:
             from report_generators.summary_report import SummaryReportGenerator
             
+            try:
+                from libs.simple_timer import get_timer_results
+            except ImportError:
+                get_timer_results = lambda: None
+            
             generator = SummaryReportGenerator()
             
             # Generate the report
@@ -55,6 +60,10 @@ class ReportGeneratorService:
                 stores=stores,
                 periods=periods
             )
+            
+            # Get performance data
+            performance_data = get_timer_results()
+            print(f"🔍 DEBUG: performance_data = {performance_data}")  # 디버그
             
             # Try to read the generated HTML file
             try:
@@ -73,14 +82,16 @@ class ReportGeneratorService:
                         "result": "HTML 보고서 생성 및 반환 완료",
                         "html_content": html_content,
                         "file_path": latest_path,
-                        "generation_summary": report_result
+                        "generation_summary": report_result,
+                        "performance": performance_data
                     }
                 else:
                     return {
                         "result": report_result,
                         "html_content": None,
                         "file_path": None,
-                        "generation_summary": "HTML 파일을 찾을 수 없음"
+                        "generation_summary": "HTML 파일을 찾을 수 없음",
+                        "performance": performance_data
                     }
                     
             except Exception as e:
@@ -138,7 +149,8 @@ class ReportGeneratorService:
                         "result": report_result,
                         "html_content": None,
                         "file_path": None,
-                        "generation_summary": "HTML 파일을 찾을 수 없음"
+                        "generation_summary": "HTML 파일을 찾을 수 없음",
+                        "performance": performance_data
                     }
                     
             except Exception as e:
