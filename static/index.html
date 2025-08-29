@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>리포트 뷰어 - Report MCP Server</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+            background: #fafafa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            color: #2563eb;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .report-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .report-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .report-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .report-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .report-meta {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .report-date {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .no-reports {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .refresh-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .latest-badge {
+            background: #10b981;
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            background: #eff6ff;
+            color: #1e40af;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 리포트 뷰어</h1>
+            <p class="description">생성된 분석 리포트를 확인하고 관리할 수 있습니다</p>
+        </header>
+
+        <button class="refresh-btn" onclick="loadReports()">🔄 새로고침</button>
+
+        <div id="error-container"></div>
+        <div id="reports-container">
+            <div class="loading">📄 리포트 목록을 불러오는 중...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        const reportTypeNames = {
+            'visitor_daily': {
+                name: '일일 방문객 리포트',
+                description: '1일 기준 방문객 데이터 분석 및 AI 인사이트',
+                color: '#dc2626'
+            },
+            'visitor_weekly': {
+                name: '주간 방문객 리포트',
+                description: '7일 기준 방문객 트렌드 분석',
+                color: '#2563eb'
+            },
+            'comparison': {
+                name: '매장간 비교 분석',
+                description: '매장별 성과 비교 및 분석 리포트',
+                color: '#059669'
+            }
+        };
+
+        async function loadReports() {
+            const container = document.getElementById('reports-container');
+            const errorContainer = document.getElementById('error-container');
+            
+            container.innerHTML = '<div class="loading">📄 리포트 목록을 불러오는 중...</div>';
+            errorContainer.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports/list`);
+                const data = await response.json();
+
+                if (data.result !== 'success') {
+                    throw new Error('리포트 목록 조회 실패');
+                }
+
+                displayReports(data.reports, data.total_files);
+            } catch (error) {
+                errorContainer.innerHTML = `
+                    <div class="error">
+                        ❌ 리포트 목록을 불러오는데 실패했습니다: ${error.message}
+                    </div>
+                `;
+                container.innerHTML = '';
+            }
+        }
+
+        function displayReports(reports, totalFiles) {
+            const container = document.getElementById('reports-container');
+            
+            if (totalFiles === 0) {
+                container.innerHTML = `
+                    <div class="no-reports">
+                        📋 생성된 리포트가 없습니다.<br>
+                        <small>리포트 생성 API를 호출하여 리포트를 만들어보세요.</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+
+            Object.entries(reports).forEach(([reportType, files]) => {
+                if (files.length === 0) return;
+
+                const typeInfo = reportTypeNames[reportType] || {
+                    name: reportType,
+                    description: '분석 리포트',
+                    color: '#6b7280'
+                };
+
+                html += `
+                    <div class="report-section">
+                        <div class="section-title" style="color: ${typeInfo.color}">
+                            ${typeInfo.name} (${files.length}개)
+                        </div>
+                        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">
+                            ${typeInfo.description}
+                        </p>
+                        <div class="report-grid">
+                `;
+
+                files.forEach((file, index) => {
+                    const isLatest = file.filename === 'latest.html';
+                    const date = new Date(file.modified);
+                    const formattedDate = date.toLocaleString('ko-KR');
+
+                    html += `
+                        <div class="report-card" onclick="openReport('${file.url}')">
+                            <div class="type-badge" style="background-color: ${typeInfo.color}15; color: ${typeInfo.color}">
+                                ${reportType}
+                            </div>
+                            ${isLatest ? '<span class="latest-badge">최신</span>' : ''}
+                            <div class="report-title">${file.filename}</div>
+                            <div class="report-meta">크기: ${formatFileSize(file.size)}</div>
+                            <div class="report-date">생성: ${formattedDate}</div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        function openReport(url) {
+            window.open(url, '_blank');
+        }
+
+        // 페이지 로드시 리포트 목록 불러오기
+        document.addEventListener('DOMContentLoaded', loadReports);
+    </script>
+</body>
+</html>
