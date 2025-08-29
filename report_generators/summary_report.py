@@ -874,7 +874,7 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
         svg = f"""
 <svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect x=\"1\" y=\"1\" width=\"{width-2}\" height=\"{height-2}\" fill=\"#fff\" stroke=\"#e5e7eb\" rx=\"10\" />\n  {''.join(grid_parts)}\n  {''.join(axis_parts)}\n  {''.join(divider_parts)}\n  {mid_label}\n  {''.join(points)}\n  {''.join(labels)}\n  <text x=\"{padding_left/2}\" y=\"{padding_top+plot_h/2}\" transform=\"rotate(-90 {padding_left/2},{padding_top+plot_h/2})\" font-size=\"19\" font-weight=\"600\" fill=\"#374151\" text-anchor=\"middle\">증감률 (%)</text>\n  <text x=\"{padding_left+plot_w/2}\" y=\"{height-30}\" font-size=\"19\" font-weight=\"600\" fill=\"#374151\" text-anchor=\"middle\">방문객 수 (명)</text>\n  
   <!-- 범례 -->
-  <rect x=\"{legend_x_start}\" y=\"{legend_y}\" width=\"120\" height=\"70\" fill=\"#f9fafb\" stroke=\"#e5e7eb\" rx=\"5\" />
+  <rect x=\"{legend_x_start}\" y=\"{legend_y}\" width=\"120\" height=\"70\" fill=\"transparent\" stroke=\"#e5e7eb\" rx=\"5\" />
   <!-- 고성장 (10% 이상) -->
   <rect x=\"{legend_x_start + 10}\" y=\"{legend_y + 12}\" width=\"10\" height=\"10\" fill=\"#dc2626\" />
   <text x=\"{legend_x_start + 25}\" y=\"{legend_y + 20}\" font-size=\"11\" fill=\"#374151\">고성장 (10%+)</text>
