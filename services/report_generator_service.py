@@ -58,7 +58,7 @@ class ReportGeneratorService:
             
             # Try to read the generated HTML file
             try:
-                from libs.html_output_config import get_full_html_path
+                from libs.html_output_config import get_full_html_path, save_html_report, cleanup_old_reports
                 
                 # Determine report type based on periods
                 report_type = 'visitor_daily' if periods == 1 else 'visitor_weekly'
@@ -69,6 +69,19 @@ class ReportGeneratorService:
                 if os.path.exists(latest_path):
                     with open(latest_path, 'r', encoding='utf-8') as f:
                         html_content = f.read()
+                    
+                    # Save both dated file and latest.html for better file management
+                    try:
+                        save_result = save_html_report(html_content, report_type, end_date, save_both=True)
+                        logger.info(f"Saved report files: {save_result['saved_files']}")
+                        
+                        # Clean up old reports (keep last 30)
+                        cleanup_old_reports(report_type, max_files=30)
+                        
+                    except Exception as e:
+                        logger.warning(f"Failed to save dated report file: {e}")
+                        # Continue anyway since we have the HTML content
+                    
                     return {
                         "result": "success",
                         "html_content": html_content

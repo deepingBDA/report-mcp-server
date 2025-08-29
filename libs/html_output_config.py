@@ -88,3 +88,96 @@ def get_full_html_path(report_type, end_date, prefix=None, use_unified=False, on
         latest_path = os.path.join(output_dir, "latest.html")
     
     return full_path, latest_path
+
+
+def save_html_report(html_content, report_type, end_date, prefix=None, use_unified=False, save_both=True):
+    """
+    HTML 리포트를 파일로 저장합니다. 날짜별 파일과 latest.html을 모두 저장할 수 있습니다.
+    
+    Args:
+        html_content: HTML 내용
+        report_type: 리포트 타입
+        end_date: 종료 날짜
+        prefix: 파일명 접두사
+        use_unified: 통합 디렉토리 사용 여부
+        save_both: True일 경우 날짜별 파일과 latest.html 모두 저장
+    
+    Returns:
+        dict: {'dated_file': 날짜별_파일_경로, 'latest_file': latest.html_경로, 'saved_files': 저장된_파일_목록}
+    """
+    try:
+        # 디렉토리 생성
+        if use_unified:
+            output_dir = get_html_output_path('unified')
+        else:
+            output_dir = get_html_output_path(report_type)
+        
+        saved_files = []
+        result = {}
+        
+        if save_both:
+            # 1. 날짜별 파일 저장
+            dated_filename = get_html_filename(report_type, end_date, prefix)
+            dated_path = os.path.join(output_dir, dated_filename)
+            
+            with open(dated_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            saved_files.append(dated_path)
+            result['dated_file'] = dated_path
+            
+            # 2. latest.html 저장
+            latest_path = os.path.join(output_dir, "latest.html")
+            with open(latest_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            saved_files.append(latest_path)
+            result['latest_file'] = latest_path
+            
+        else:
+            # latest.html만 저장 (기존 동작)
+            latest_path = os.path.join(output_dir, "latest.html")
+            with open(latest_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            saved_files.append(latest_path)
+            result['latest_file'] = latest_path
+            result['dated_file'] = None
+        
+        result['saved_files'] = saved_files
+        return result
+        
+    except Exception as e:
+        raise Exception(f"Failed to save HTML report: {e}")
+
+
+def cleanup_old_reports(report_type, max_files=30):
+    """
+    오래된 리포트 파일들을 정리합니다. latest.html은 제외하고 날짜별 파일만 정리합니다.
+    
+    Args:
+        report_type: 리포트 타입
+        max_files: 보관할 최대 파일 개수 (latest.html 제외)
+    """
+    try:
+        output_dir = Path(get_html_output_path(report_type))
+        if not output_dir.exists():
+            return
+        
+        # HTML 파일 목록 (latest.html 제외)
+        html_files = []
+        for file_path in output_dir.glob("*.html"):
+            if file_path.name != "latest.html":
+                html_files.append(file_path)
+        
+        # 생성 시간으로 정렬 (오래된 순)
+        html_files.sort(key=lambda x: x.stat().st_ctime)
+        
+        # max_files 개수를 초과하는 오래된 파일들 삭제
+        if len(html_files) > max_files:
+            files_to_delete = html_files[:-max_files]
+            for file_path in files_to_delete:
+                try:
+                    file_path.unlink()
+                except Exception as e:
+                    print(f"Warning: Failed to delete old report {file_path}: {e}")
+                    
+    except Exception as e:
+        print(f"Warning: Failed to cleanup old reports: {e}")
