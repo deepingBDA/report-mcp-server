@@ -46,11 +46,6 @@ class ReportGeneratorService:
         try:
             from report_generators.summary_report import SummaryReportGenerator
             
-            try:
-                from libs.simple_timer import get_timer_results
-            except ImportError:
-                get_timer_results = lambda: None
-            
             generator = SummaryReportGenerator()
             
             # Generate the report
@@ -60,10 +55,6 @@ class ReportGeneratorService:
                 stores=stores,
                 periods=periods
             )
-            
-            # Get performance data
-            performance_data = get_timer_results()
-            print(f"🔍 DEBUG: performance_data = {performance_data}")  # 디버그
             
             # Try to read the generated HTML file
             try:
@@ -79,28 +70,20 @@ class ReportGeneratorService:
                     with open(latest_path, 'r', encoding='utf-8') as f:
                         html_content = f.read()
                     return {
-                        "result": "HTML 보고서 생성 및 반환 완료",
-                        "html_content": html_content,
-                        "file_path": latest_path,
-                        "generation_summary": report_result,
-                        "performance": performance_data
+                        "result": "success",
+                        "html_content": html_content
                     }
                 else:
                     return {
-                        "result": report_result,
-                        "html_content": None,
-                        "file_path": None,
-                        "generation_summary": "HTML 파일을 찾을 수 없음",
-                        "performance": performance_data
+                        "result": "failed",
+                        "html_content": None
                     }
                     
             except Exception as e:
                 logger.error(f"HTML 파일 읽기 실패: {e}")
                 return {
-                    "result": workflow_result,
-                    "html_content": None,
-                    "file_path": None,
-                    "generation_summary": f"HTML 파일 처리 오류: {e}"
+                    "result": "failed",
+                    "html_content": None
                 }
                 
         except Exception as e:
