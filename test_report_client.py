@@ -148,7 +148,7 @@ def main():
     print("\n" + "=" * 60)
     
     # 2. Summary Report 테스트 (2025-04-30 기준, 모든 매장) - 1일 모드
-    test_date = "2025-04-30"
+    test_date = "2025-04-25"
     print(f"📊 Visitor Summary Report 생성 테스트 (All stores - 기준일: {test_date}) - 1일 모드")
     summary_file = client.generate_summary_report(
         data_type="visitor",
