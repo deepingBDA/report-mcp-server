@@ -114,7 +114,7 @@ curl -X POST http://localhost:8002/mcp/tools/report-generator/summary-report-htm
 
 ```bash
 # Python 테스트 클라이언트 실행
-python test_report_client.py
+python test/test_report_client.py
 
 # 실행 결과:
 # - 서버 상태 확인
