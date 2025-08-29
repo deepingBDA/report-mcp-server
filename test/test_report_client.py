@@ -48,21 +48,15 @@ class ReportClient:
             response.raise_for_status()
             
             result = response.json()
-            print(f"✅ 응답 성공: {result['result']}")
+            
+            # 새로운 응답 형식 처리
+            if result.get('result') == 'success':
+                print(f"✅ 응답 성공: {result['result']}")
+            else:
+                print(f"❌ 응답 실패: {result['result']}")
             
             # DEBUG: 응답 구조 확인
             print(f"🔍 응답 키들: {list(result.keys())}")
-            
-            # 성능 데이터 출력
-            if result.get('performance'):
-                perf = result['performance']
-                print(f"\n⏱️  성능 측정 결과:")
-                print(f"   총 소요 시간: {perf['total_time']}초")
-                for measurement in perf['measurements']:
-                    print(f"   {measurement['name']:<25} {measurement['duration']:6.2f}초 ({measurement['percentage']:5.1f}%)")
-                print()
-            else:
-                print(f"⚠️  성능 데이터 없음: {result.get('performance')}")
             
             if result.get('html_content'):
                 # HTML 파일 저장
