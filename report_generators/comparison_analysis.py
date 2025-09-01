@@ -164,6 +164,8 @@ class ComparisonAnalysisGenerator:
     .summary-list li {{ margin: 6px 0; text-align: left; list-style: disc; }}
     .chart-container {{ text-align: center; margin: 16px auto; width: 100%; display: flex; justify-content: center; align-items: center; }}
     .chart-container svg {{ width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px; display: block; margin: 0 auto; }}
+    .dual-chart {{ display: flex; gap: 20px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }}
+    .dual-chart .chart-container {{ flex: 1; min-width: 500px; max-width: 600px; }}
   </style>
 </head>
 <body>
