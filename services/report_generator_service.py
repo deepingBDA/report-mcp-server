@@ -135,7 +135,7 @@ class ReportGeneratorService:
                     with open(latest_path, 'r', encoding='utf-8') as f:
                         html_content = f.read()
                     return {
-                        "result": "HTML 비교 분석 보고서 생성 및 반환 완료",
+                        "result": "success",
                         "html_content": html_content,
                         "file_path": latest_path,
                         "generation_summary": report_result
