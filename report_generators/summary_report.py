@@ -867,9 +867,11 @@ class SummaryReportGenerator(BaseWorkflow[SummaryReportState]):
                 f"</text>"
             )
 
-        # 범례 추가 (차트 외부 오른쪽 위 공백에 배치)
-        legend_y = padding_top + 10
-        legend_x_start = padding_left + plot_w + 20  # 차트 오른쪽 외부에 20px 간격
+        # 범례 추가 (SVG 컨테이너 내부 오른쪽 아래에 배치)
+        legend_width = 120
+        legend_height = 70
+        legend_x_start = width - legend_width - 20  # 오른쪽에서 20px 간격
+        legend_y = height - legend_height - 20  # 아래에서 20px 간격
         
         svg = f"""
 <svg width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {width} {height}\" xmlns=\"http://www.w3.org/2000/svg\">\n  <rect x=\"1\" y=\"1\" width=\"{width-2}\" height=\"{height-2}\" fill=\"#fff\" stroke=\"#e5e7eb\" rx=\"10\" />\n  {''.join(grid_parts)}\n  {''.join(axis_parts)}\n  {''.join(divider_parts)}\n  {mid_label}\n  {''.join(points)}\n  {''.join(labels)}\n  <text x=\"{padding_left/2}\" y=\"{padding_top+plot_h/2}\" transform=\"rotate(-90 {padding_left/2},{padding_top+plot_h/2})\" font-size=\"19\" font-weight=\"600\" fill=\"#374151\" text-anchor=\"middle\">증감률 (%)</text>\n  <text x=\"{padding_left+plot_w/2}\" y=\"{height-30}\" font-size=\"19\" font-weight=\"600\" fill=\"#374151\" text-anchor=\"middle\">방문객 수 (명)</text>\n  
