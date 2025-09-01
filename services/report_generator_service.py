@@ -136,9 +136,7 @@ class ReportGeneratorService:
                         html_content = f.read()
                     return {
                         "result": "success",
-                        "html_content": html_content,
-                        "file_path": latest_path,
-                        "generation_summary": report_result
+                        "html_content": html_content
                     }
                 else:
                     return {
