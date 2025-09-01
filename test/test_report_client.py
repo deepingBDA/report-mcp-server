@@ -28,7 +28,7 @@ class ReportClient:
             print(f"❌ Health Check 실패: {e}")
             return False
     
-    def generate_summary_report(self, data_type="visitor", end_date="2025-08-29", stores="all", periods=[1], report_type="daily"):
+    def generate_summary_report(self, data_type="visitor", end_date="2025-04-30", stores="all", periods=[1], report_type="daily"):
         """Summary Report 생성 및 서버 URL로 열기"""
         url = f"{self.server_url}/mcp/tools/report-generator/summary-report-html"
         
@@ -192,7 +192,7 @@ def main():
     print("=" * 60)
     
     client = ReportClient()
-    test_date = "2025-08-29"
+    test_date = "2025-04-30"
     results = {}
     
     # 1. 헬스체크

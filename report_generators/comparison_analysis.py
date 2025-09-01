@@ -139,6 +139,17 @@ class ComparisonAnalysisGenerator:
         store_b = stores[1] if len(stores) > 1 else (stores[0] if stores else "B매장")
         title = f"매장별 방문객 추이 비교 분석: {store_a} vs {store_b}"
         
+        # 비교 날짜 범위 계산 (기본 7일)
+        from datetime import datetime, timedelta
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            start_dt = end_dt - timedelta(days=6)  # 7일간 (종료일 포함)
+            start_str = start_dt.strftime("%Y년 %m월 %d일")
+            end_str = end_dt.strftime("%Y년 %m월 %d일")
+            date_range = f"(비교 일자: {start_str} ~ {end_str})"
+        except:
+            date_range = f"(비교 일자: {end_date})"
+        
         # 4개 카드 섹션
         summary_card = self._build_summary_card(comparison_analysis)
         daily_trends_card = self._build_daily_trends_card(stores)
@@ -171,7 +182,7 @@ class ComparisonAnalysisGenerator:
 <body>
   <div class="container">
     <h2 class="page-title">{title}</h2>
-    <div class="page-subtitle">비교 분석합니다</div>
+    <div class="page-subtitle">비교 분석합니다 {date_range}</div>
     
     {summary_card}
     {daily_trends_card}
