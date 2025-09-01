@@ -929,17 +929,17 @@ class ComparisonAnalysisGenerator:
                 value = site_a_matrix[i][j]
                 max_value = max(max(row) for row in site_a_matrix) if site_a_matrix else 1
                 intensity = value / max_value if max_value else 0
-                # 보간: hot(#741443) ↔ mid(#E48356) ↔ cool(#FFFFFF)
+                # 보간: 낮은값=흰색(#FFFFFF) → 중간값=주황(#E48356) → 높은값=자주(#741443)
                 def hex_to_rgb(h):
                     h=h.lstrip('#'); return tuple(int(h[k:k+2],16) for k in (0,2,4))
                 def lerp(a,b,t): return int(a+(b-a)*t)
-                hot = hex_to_rgb('#741443'); mid = hex_to_rgb('#E48356'); cool = hex_to_rgb('#FFFFFF')
+                cool = hex_to_rgb('#FFFFFF'); mid = hex_to_rgb('#E48356'); hot = hex_to_rgb('#741443')
                 if intensity <= 0.5:
                     t = intensity*2
-                    r = lerp(hot[0], mid[0], t); g = lerp(hot[1], mid[1], t); b = lerp(hot[2], mid[2], t)
+                    r = lerp(cool[0], mid[0], t); g = lerp(cool[1], mid[1], t); b = lerp(cool[2], mid[2], t)
                 else:
                     t = (intensity-0.5)*2
-                    r = lerp(mid[0], cool[0], t); g = lerp(mid[1], cool[1], t); b = lerp(mid[2], cool[2], t)
+                    r = lerp(mid[0], hot[0], t); g = lerp(mid[1], hot[1], t); b = lerp(mid[2], hot[2], t)
                 color = f"rgb({r},{g},{b})"
                 
                 # 셀 그리기
@@ -960,13 +960,13 @@ class ComparisonAnalysisGenerator:
                 def hex_to_rgb(h):
                     h=h.lstrip('#'); return tuple(int(h[k:k+2],16) for k in (0,2,4))
                 def lerp(a,b,t): return int(a+(b-a)*t)
-                hot = hex_to_rgb('#741443'); mid = hex_to_rgb('#E48356'); cool = hex_to_rgb('#FFFFFF')
+                cool = hex_to_rgb('#FFFFFF'); mid = hex_to_rgb('#E48356'); hot = hex_to_rgb('#741443')
                 if intensity <= 0.5:
                     t = intensity*2
-                    r = lerp(hot[0], mid[0], t); g = lerp(hot[1], mid[1], t); b = lerp(hot[2], mid[2], t)
+                    r = lerp(cool[0], mid[0], t); g = lerp(cool[1], mid[1], t); b = lerp(cool[2], mid[2], t)
                 else:
                     t = (intensity-0.5)*2
-                    r = lerp(mid[0], cool[0], t); g = lerp(mid[1], cool[1], t); b = lerp(mid[2], cool[2], t)
+                    r = lerp(mid[0], hot[0], t); g = lerp(mid[1], hot[1], t); b = lerp(mid[2], hot[2], t)
                 color = f"rgb({r},{g},{b})"
                 
                 # 셀 그리기
