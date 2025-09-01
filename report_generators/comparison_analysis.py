@@ -507,7 +507,7 @@ class ComparisonAnalysisGenerator:
     
     def _build_customer_composition_card(self, stores: List[str] = None) -> str:
         """3. 고객 구성 변화 - 성별/연령대별 막대그래프"""
-        chart_svg = self._generate_customer_composition_chart()
+        chart_svg = self._generate_customer_composition_chart(stores)
         
         return f"""
 <section class="card">
@@ -531,7 +531,7 @@ class ComparisonAnalysisGenerator:
 </section>
 """
     
-    def _generate_customer_composition_chart(self) -> str:
+    def _generate_customer_composition_chart(self, stores: List[str] = None) -> str:
         """고객 구성 변화 차트 생성 - 중앙 기준 분기형(왼쪽 남성, 오른쪽 여성) 수평 막대 + 비교 얇은 바.
 
         색상 규칙
@@ -789,6 +789,8 @@ class ComparisonAnalysisGenerator:
         # 두 매장 블록: 텍스트는 각 차트 위에 별도 DOM 요소로 배치
         single_w, single_h = 1100, 640
         # 실제 매장명을 사용한 차트 생성
+        if stores is None:
+            stores = ["A매장", "B매장"]
         site_a_name = stores[0] if len(stores) > 0 else "A매장"
         site_b_name = stores[1] if len(stores) > 1 else "B매장"
         chart_a = render_single(site_a_name, a_m, a_f, a_m_cmp, a_f_cmp, single_w, single_h)
@@ -818,6 +820,8 @@ class ComparisonAnalysisGenerator:
 
     def _generate_time_age_heatmap(self, stores: List[str] = None) -> str:
         """시간대 연령대별 방문 패턴 히트맵 생성 (24시간 × 7연령대)"""
+        if stores is None:
+            stores = ["A매장", "B매장"]
         # 더미 데이터: 24시간 × 연령대(0~9세 추가)
         time_slots = list(range(24))  # 0~23시
         # 요청: 0~9세 → "10세 미만"으로 표기하고, "10대" 위에 오도록 배치
