@@ -1119,11 +1119,11 @@ class ComparisonAnalysisGenerator:
                 svg_elements.append(f'<rect x="{x}" y="{y}" width="{cell_width}" height="{cell_height}" fill="{color}" />')
         
         # X축 라벨 (시간) - 3시간 간격으로 표시
+        label_y = padding + heatmap_height + 20  # 히트맵 바로 아래 20px
         for i, h in enumerate(time_slots):
             if h % 3 == 0:  # 3시간 간격: 0, 3, 6, 9, 12, 15, 18, 21시
                 x = padding + (i * cell_width) + cell_width/2
-                y = height - 10  # 더 가까이 배치
-                svg_elements.append(f'<text x="{x}" y="{y}" font-size="10" text-anchor="middle" fill="#6b7280">{h}시</text>')
+                svg_elements.append(f'<text x="{x}" y="{label_y}" font-size="10" text-anchor="middle" fill="#6b7280">{h}시</text>')
         
         # Y축 라벨 (연령대)
         for j, age_group in enumerate(age_groups):
