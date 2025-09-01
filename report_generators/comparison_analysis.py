@@ -534,14 +534,20 @@ class ComparisonAnalysisGenerator:
 """
     
     def _build_time_age_pattern_card(self, stores: List[str] = None) -> str:
-        """4. 시간대 연령대별 방문 패턴 - 히트맵"""
-        chart_svg = self._generate_time_age_heatmap(stores)
+        """4. 시간대 연령대별 방문 패턴 - 히트맵 (매장별 분리)"""
+        if stores is None:
+            stores = ["A매장", "B매장"]
+        
+        # 각 매장별로 개별 히트맵 생성
+        chart_a = self._generate_single_heatmap(stores[0], 0)
+        chart_b = self._generate_single_heatmap(stores[1], 1)
         
         return f"""
 <section class="card">
   <h3>시간대 연령대별 방문 패턴</h3>
-  <div class="chart-container">
-    {chart_svg}
+  <div class="dual-chart">
+    <div class="chart-container">{chart_a}</div>
+    <div class="chart-container">{chart_b}</div>
   </div>
 </section>
 """
@@ -1038,6 +1044,102 @@ class ComparisonAnalysisGenerator:
 </svg>
 """
         return svg
+
+    def _generate_single_heatmap(self, store_name: str, store_index: int) -> str:
+        """단일 매장 히트맵 생성"""
+        # 시간대와 연령대 정의
+        time_slots = list(range(24))  # 0~23시
+        age_groups = ["60대+", "50대", "40대", "30대", "20대", "10대", "0~9세"]
+        
+        # 실제 데이터가 있으면 사용, 없으면 빈 데이터 사용
+        if hasattr(self, 'comparison_data') and self.comparison_data and len(self.comparison_data) >= (store_index + 1):
+            stores_with_data = list(self.comparison_data.keys())
+            site = stores_with_data[store_index] if store_index < len(stores_with_data) else stores_with_data[0]
+            
+            heatmap_data = self.comparison_data[site].get("time_age_heatmap", {})
+            
+            if heatmap_data:
+                site_data = heatmap_data.get("data", [])
+                
+                # 데이터를 시간대별로 재구성 (7연령대 x 24시간을 24시간 x 7연령대로 변환)
+                if site_data and len(site_data) == 7:
+                    site_matrix = []
+                    for hour in range(24):
+                        site_hour = [site_data[age_idx][hour] for age_idx in range(7)]
+                        site_matrix.append(site_hour)
+                else:
+                    site_matrix = [[0 for _ in range(7)] for _ in range(24)]
+            else:
+                site_matrix = [[0 for _ in range(7)] for _ in range(24)]
+        else:
+            site_matrix = [[0 for _ in range(7)] for _ in range(24)]
+        
+        # 차트 크기 설정 (개별 차트용으로 크기 조정)
+        width = 550
+        height = 400
+        padding = 40
+        
+        # 히트맵 영역 계산
+        heatmap_width = width - 2 * padding
+        heatmap_height = height - 2 * padding - 40  # 하단 라벨 공간
+        
+        # 셀 크기 계산
+        cell_width = heatmap_width / len(time_slots)
+        cell_height = heatmap_height / len(age_groups)
+        
+        svg_elements = []
+        
+        # 히트맵 그리기
+        for i, time_slot in enumerate(time_slots):
+            for j, age_group in enumerate(age_groups):
+                x = padding + (i * cell_width)
+                y = padding + (j * cell_height)
+                
+                # 방문자 수에 따른 색상 강도 계산 (실제 데이터 사용)
+                value = site_matrix[i][j]
+                max_value = max(max(row) for row in site_matrix) if site_matrix else 1
+                intensity = value / max_value if max_value else 0
+                
+                # 색상 그라데이션: 낮은값=흰색 → 중간값=주황 → 높은값=자주
+                def hex_to_rgb(h):
+                    h=h.lstrip('#'); return tuple(int(h[k:k+2],16) for k in (0,2,4))
+                def lerp(a,b,t): return int(a+(b-a)*t)
+                cool = hex_to_rgb('#FFFFFF'); mid = hex_to_rgb('#E48356'); hot = hex_to_rgb('#741443')
+                if intensity <= 0.5:
+                    t = intensity*2
+                    r = lerp(cool[0], mid[0], t); g = lerp(cool[1], mid[1], t); b = lerp(cool[2], mid[2], t)
+                else:
+                    t = (intensity-0.5)*2
+                    r = lerp(mid[0], hot[0], t); g = lerp(mid[1], hot[1], t); b = lerp(mid[2], hot[2], t)
+                color = f"rgb({r},{g},{b})"
+                
+                # 셀 그리기
+                svg_elements.append(f'<rect x="{x}" y="{y}" width="{cell_width}" height="{cell_height}" fill="{color}" />')
+        
+        # X축 라벨 (시간)
+        for i, h in enumerate(time_slots):
+            if h % 6 == 0:  # 6시간 간격으로만 표시
+                x = padding + (i * cell_width) + cell_width/2
+                y = height - 25
+                svg_elements.append(f'<text x="{x}" y="{y}" font-size="11" text-anchor="middle" fill="#6b7280">{h}시</text>')
+        
+        # Y축 라벨 (연령대)
+        for j, age_group in enumerate(age_groups):
+            x = padding - 5
+            y = padding + (j * cell_height) + cell_height/2 + 3
+            svg_elements.append(f'<text x="{x}" y="{y}" font-size="12" text-anchor="end" fill="#6b7280">{age_group}</text>')
+        
+        # 제목
+        svg_elements.append(f'<text x="{width//2}" y="25" font-size="16" font-weight="bold" text-anchor="middle" fill="#1f2937">{store_name}</text>')
+        
+        # 차트 테두리
+        svg_elements.append(f'<rect x="{padding}" y="{padding}" width="{heatmap_width}" height="{heatmap_height}" fill="none" stroke="#e5e7eb" stroke-width="2" rx="4" />')
+        
+        return f"""
+<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
+  {''.join(svg_elements)}
+</svg>
+"""
 
     @staticmethod
     def _escape_html(text: str) -> str:
