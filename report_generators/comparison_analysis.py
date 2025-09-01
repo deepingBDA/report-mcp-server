@@ -390,8 +390,12 @@ class ComparisonAnalysisGenerator:
             # 방문자 수 라벨 (막대 상단)
             svg_elements.append(f'<text x="{curr_x + bar_width/2}" y="{curr_y-8}" font-size="{int(16*ui_scale)}" text-anchor="middle" fill="#1f2937" font-weight="bold">{curr_visitors[i]}</text>')
             
-            # X축 라벨 (날짜 + 요일)
-            svg_elements.append(f'<text x="{x_center}" y="{height-padding+25}" font-size="{int(18*ui_scale)}" text-anchor="middle" fill="#6b7280">{date_str}<tspan x="{x_center}" dy="{int(25*ui_scale)}">{weekday}</tspan></text>')
+            # X축 라벨 (날짜 + 요일) - 2025-04-30 WED -> 04-30 수 형식으로 변경
+            short_date = date_str[-5:] if len(date_str) >= 10 else date_str  # YYYY-MM-DD에서 MM-DD 추출
+            korean_weekday_map = {'Mon': '월', 'Tue': '화', 'Wed': '수', 'Thu': '목', 'Fri': '금', 'Sat': '토', 'Sun': '일'}
+            korean_weekday = korean_weekday_map.get(weekday, weekday)
+            formatted_label = f"{short_date} {korean_weekday}"
+            svg_elements.append(f'<text x="{x_center}" y="{height-padding+25}" font-size="{int(18*ui_scale)}" text-anchor="middle" fill="#6b7280">{formatted_label}</text>')
         
         # 변화율 선 그래프 (초록색) - min/max 기반 간단한 스케일링
         points = []
