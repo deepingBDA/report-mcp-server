@@ -57,34 +57,28 @@ class ComparisonAnalysisGenerator:
             )
         except Exception as e:
             import traceback
-            print(f"실제 데이터 추출 실패, 더미 데이터 사용: {e}")
+            print(f"실제 데이터 추출 실패: {e}")
             print(f"상세 오류: {traceback.format_exc()}")
             self.comparison_data = {}
         
-        # 더미 데이터 생성 (매장별로 다른 패턴)
+        # 실제 데이터에서 summary 정보 생성
         data_by_period = {}
-        periods = [period]  # Convert single period to list for compatibility
-        for days in periods:
-            data = []
-            for i, site in enumerate(stores):
-                # 매장별로 다른 성과 패턴 생성
-                base_growth = 3.0 + (i * 1.5)  # 매장별 차등 적용
-                base_visitors = 1000 + (i * 200)  # 매장별 기본 방문객 수
-                
-                # 평일/주말 차이 (일부 매장은 주말이 더 높음)
-                weekday_factor = 1.0 if i % 2 == 0 else 1.2
-                weekend_factor = 1.0 if i % 2 == 0 else 0.8
-                
-                data.append({
-                    "site": site,
-                    "end_date": end_date,
-                    "curr_total": int(base_visitors * (1 + base_growth / 100)),
-                    "prev_total": base_visitors,
-                    "weekday_delta_pct": round(base_growth * weekday_factor, 1),
-                    "weekend_delta_pct": round(base_growth * weekend_factor, 1),
-                    "total_delta_pct": round(base_growth, 1),
-                })
-            data_by_period[days] = data
+        periods = [period]
+        
+        if self.comparison_data:
+            # 실제 데이터에서 summary 생성
+            data_by_period[period] = self._generate_summary_from_real_data(stores, end_date)
+        else:
+            # 데이터가 없으면 빈 summary 생성
+            data_by_period[period] = [{
+                "site": site,
+                "end_date": end_date,
+                "curr_total": 0,
+                "prev_total": 0,
+                "weekday_delta_pct": 0.0,
+                "weekend_delta_pct": 0.0,
+                "total_delta_pct": 0.0,
+            } for site in stores]
         
         # LLM 비교분석 생성
         comparison_analysis = self._generate_comparison_analysis(data_by_period, periods)
@@ -221,19 +215,34 @@ class ComparisonAnalysisGenerator:
     
     def _generate_daily_trends_chart(self) -> str:
         """A매장 vs B매장 비교 차트 생성 (좌우 나란히)"""
-        # 더미 데이터: A매장 vs B매장 비교
-        dates = ["8/1", "8/2", "8/3", "8/4", "8/5", "8/6", "8/7"]
-        weekdays = ["(목)", "(금)", "(토)", "(일)", "(월)", "(화)", "(수)"]
-        
-        # A매장 데이터 - 이미지와 동일하게 수정
-        site_a_prev = [115, 130, 120, 140, 135, 170, 180]
-        site_a_curr = [120, 135, 128, 142, 138, 180, 185]
-        site_a_growth = [4.3, 3.8, 2.4, 1.4, 2.2, 5.9, 5.4]
-        
-        # B매장 데이터 - 이미지와 동일하게 수정
-        site_b_prev = [95, 110, 120, 105, 115, 160, 160]
-        site_b_curr = [98, 112, 122, 108, 118, 165, 165]
-        site_b_growth = [3.2, 1.8, 1.7, 2.9, 2.6, 3.1, 3.1]
+        # 실제 데이터 사용
+        if hasattr(self, 'comparison_data') and self.comparison_data and len(self.comparison_data) >= 2:
+            stores_with_data = list(self.comparison_data.keys())
+            site_a, site_b = stores_with_data[0], stores_with_data[1]
+            
+            # A매장 데이터
+            a_data = self.comparison_data[site_a].get("daily_trends", {})
+            dates = a_data.get("dates", [])
+            weekdays = a_data.get("weekdays", [])
+            site_a_prev = a_data.get("previous", [])
+            site_a_curr = a_data.get("current", [])
+            site_a_growth = a_data.get("growth", [])
+            
+            # B매장 데이터
+            b_data = self.comparison_data[site_b].get("daily_trends", {})
+            site_b_prev = b_data.get("previous", [])
+            site_b_curr = b_data.get("current", [])
+            site_b_growth = b_data.get("growth", [])
+        else:
+            # 데이터가 없으면 빈 데이터 사용
+            dates = []
+            weekdays = []
+            site_a_prev = []
+            site_a_curr = []
+            site_a_growth = []
+            site_b_prev = []
+            site_b_curr = []
+            site_b_growth = []
         
         # 전체 차트 크기 (두 개 차트를 나란히)
         total_width = 2600
@@ -446,7 +455,7 @@ class ComparisonAnalysisGenerator:
     
     def _build_daily_trends_card(self, stores: List[str]) -> str:
         """2. 매장별 일별 방문 추이 - 매장별 분리 구성(2와 동일한 레이아웃)"""
-        # 실제 데이터가 있으면 사용, 없으면 더미 데이터 사용
+        # 실제 데이터가 있으면 사용, 없으면 빈 데이터 사용
         if hasattr(self, 'comparison_data') and self.comparison_data:
             # 실제 데이터에서 추출
             stores_with_data = list(self.comparison_data.keys())
@@ -544,13 +553,34 @@ class ComparisonAnalysisGenerator:
         """
         # 연령대(Y축): 60대 이상 → 10세 미만 (상단→하단)
         age_labels = ["60세~", "50~59세", "40~49세", "30~39세", "20~29세", "10~19세", "0~9세"]
-        # 더미 비율 (해당 매장 전체 100% 내 분포라고 가정)
-        # 최대치 테스트용: 30~39세/10~19세 구간을 과감히 키워 바깥쪽 길이가 충분히 뻗도록 설정
-        age_totals_a = [12, 18, 22, 35, 20, 28, 3]
-        age_totals_b = [10, 17, 21, 32, 22, 30, 4]
-        # 성별 비중(각 연령대 합 중 남성 비율)
-        male_share_a = [0.52, 0.56, 0.51, 0.46, 0.42, 0.55, 0.50]
-        male_share_b = [0.50, 0.53, 0.49, 0.47, 0.44, 0.56, 0.50]
+        
+        # 실제 데이터가 있으면 사용, 없으면 빈 데이터 사용
+        if hasattr(self, 'comparison_data') and self.comparison_data and len(self.comparison_data) >= 2:
+            # 실제 데이터에서 추출
+            stores_with_data = list(self.comparison_data.keys())
+            site_a, site_b = stores_with_data[0], stores_with_data[1]
+            
+            a_data = self.comparison_data[site_a].get("customer_composition", {})
+            b_data = self.comparison_data[site_b].get("customer_composition", {})
+            
+            if a_data and b_data:
+                # 실제 데이터 사용
+                age_totals_a = a_data.get("age_distribution", [12, 18, 22, 35, 20, 28, 3])
+                age_totals_b = b_data.get("age_distribution", [10, 17, 21, 32, 22, 30, 4])
+                male_share_a = a_data.get("male_ratio", [0.52, 0.56, 0.51, 0.46, 0.42, 0.55, 0.50])
+                male_share_b = b_data.get("male_ratio", [0.50, 0.53, 0.49, 0.47, 0.44, 0.56, 0.50])
+            else:
+                # 빈 데이터인 경우 빈 배열 사용
+                age_totals_a = [0] * 7
+                age_totals_b = [0] * 7
+                male_share_a = [0.5] * 7
+                male_share_b = [0.5] * 7
+        else:
+            # 데이터가 없으면 빈 배열 사용
+            age_totals_a = [0] * 7
+            age_totals_b = [0] * 7
+            male_share_a = [0.5] * 7
+            male_share_b = [0.5] * 7
 
         def split(age_totals: List[float], male_share: List[float]) -> tuple[List[float], List[float]]:
             m = [round(t * s, 1) for t, s in zip(age_totals, male_share)]
@@ -821,32 +851,51 @@ class ComparisonAnalysisGenerator:
         return block_html
 
     def _generate_time_age_heatmap(self, stores: List[str] = None) -> str:
-        """시간대 연령대별 방문 패턴 히트맵 생성 (24시간 × 7연령대)"""
+        """시간대 연령대별 방문 패턴 히트맵 생성 (24시간 × 6연령대)"""
         if stores is None:
             stores = ["A매장", "B매장"]
-        # 더미 데이터: 24시간 × 연령대(0~9세 추가)
-        time_slots = list(range(24))  # 0~23시
-        # 요청: 0~9세 → "10세 미만"으로 표기하고, "10대" 위에 오도록 배치
-        age_groups = ["10세 미만", "10대", "20대", "30대", "40대", "50대", "60대+"]
         
-        # 간단 생성기: 오전/점심/저녁 피크를 반영한 더미 데이터 생성
-        def gen_store_pattern(mult: float = 1.0):
-            data = []
-            for h in time_slots:
-                row = []
-                base = 10 + 5 * (1 if 11 <= h <= 14 else 0) + 7 * (18 <= h <= 21) + 3 * (8 <= h <= 10)
-                # 연령대별 가중 (30대/20대 높게, 60+ 낮게, 10세 미만 매우 낮게)
-                # 순서: 10세 미만, 10대, 20대, 30대, 40대, 50대, 60+
-                weights = [0.3, 1.1, 1.4, 1.6, 1.2, 0.9, 0.6]
-                for w in weights:
-                    row.append(int((base * w + (h % 3)) * mult))
-                data.append(row)
-            return data
-
-        site_a_prev = gen_store_pattern(1.0)
-        site_a_curr = gen_store_pattern(1.1)
-        site_b_prev = gen_store_pattern(0.9)
-        site_b_curr = gen_store_pattern(1.05)
+        # 시간대와 연령대 정의 (comparison_extractor와 일치)
+        time_slots = list(range(24))  # 0~23시
+        age_groups = ["60대+", "50대", "40대", "30대", "20대", "10대"]  # 실제 데이터 구조와 일치
+        
+        # 실제 데이터가 있으면 사용, 없으면 빈 데이터 사용
+        if hasattr(self, 'comparison_data') and self.comparison_data and len(self.comparison_data) >= 2:
+            # 실제 데이터에서 추출
+            stores_with_data = list(self.comparison_data.keys())
+            site_a, site_b = stores_with_data[0], stores_with_data[1]
+            
+            a_heatmap = self.comparison_data[site_a].get("time_age_heatmap", {})
+            b_heatmap = self.comparison_data[site_b].get("time_age_heatmap", {})
+            
+            if a_heatmap and b_heatmap:
+                # 실제 데이터 사용 (data는 6개 연령대 x 24시간 매트릭스)
+                site_a_data = a_heatmap.get("data", [])
+                site_b_data = b_heatmap.get("data", [])
+                
+                # 데이터를 시간대별로 재구성 (6연령대 x 24시간을 24시간 x 6연령대로 변환)
+                if site_a_data and site_b_data and len(site_a_data) == 6 and len(site_b_data) == 6:
+                    # 6연령대 x 24시간을 24시간 x 6연령대로 변환
+                    site_a_matrix = []
+                    site_b_matrix = []
+                    
+                    for hour in range(24):
+                        site_a_hour = [site_a_data[age_idx][hour] for age_idx in range(6)]
+                        site_b_hour = [site_b_data[age_idx][hour] for age_idx in range(6)]
+                        site_a_matrix.append(site_a_hour)
+                        site_b_matrix.append(site_b_hour)
+                else:
+                    # 데이터가 없으면 빈 매트릭스 생성
+                    site_a_matrix = [[0 for _ in range(6)] for _ in range(24)]
+                    site_b_matrix = [[0 for _ in range(6)] for _ in range(24)]
+            else:
+                # 빈 데이터인 경우 빈 매트릭스 생성
+                site_a_matrix = [[0 for _ in range(6)] for _ in range(24)]
+                site_b_matrix = [[0 for _ in range(6)] for _ in range(24)]
+        else:
+            # 데이터가 없으면 빈 매트릭스 생성
+            site_a_matrix = [[0 for _ in range(6)] for _ in range(24)]
+            site_b_matrix = [[0 for _ in range(6)] for _ in range(24)]
         
         # 차트 크기 설정
         width = 1100  # 더 compact
@@ -869,16 +918,16 @@ class ComparisonAnalysisGenerator:
         
         svg_elements = []
         
-        # 히트맵 그리기 (A매장 전주) - 자주(#741443) → 주황(#E48356) → 흰색(#FFFFFF) 그라데이션
+        # 히트맵 그리기 (A매장) - 자주(#741443) → 주황(#E48356) → 흰색(#FFFFFF) 그라데이션
         for i, time_slot in enumerate(time_slots):
             for j, age_group in enumerate(age_groups):
                 # 간격 보정: 현재 기준(축소된 너비)에 맞춰 x 스텝도 rect_w로 이동
                 x = padding + (i * rect_w)
                 y = padding + (j * cell_height)
                 
-                # 방문자 수에 따른 색상 강도 계산
-                value = site_a_prev[i][j]
-                max_value = max(max(row) for row in site_a_prev)
+                # 방문자 수에 따른 색상 강도 계산 (실제 데이터 사용)
+                value = site_a_matrix[i][j]
+                max_value = max(max(row) for row in site_a_matrix) if site_a_matrix else 1
                 intensity = value / max_value if max_value else 0
                 # 보간: hot(#741443) ↔ mid(#E48356) ↔ cool(#FFFFFF)
                 def hex_to_rgb(h):
@@ -898,15 +947,15 @@ class ComparisonAnalysisGenerator:
                 
                 # 값 표기는 24×7 격자에서는 과밀해 생략
         
-        # B매장 히트맵 (금주) - 오른쪽에 배치 (동일 그라데이션)
+        # B매장 히트맵 - 오른쪽에 배치 (동일 그라데이션)
         for i, time_slot in enumerate(time_slots):
             for j, age_group in enumerate(age_groups):
                 x = padding + width//2 + (i * rect_w)
                 y = padding + (j * cell_height)
                 
-                # 방문자 수에 따른 색상 강도 계산
-                value = site_b_curr[i][j]
-                max_value = max(max(row) for row in site_b_curr)
+                # 방문자 수에 따른 색상 강도 계산 (실제 데이터 사용)
+                value = site_b_matrix[i][j]
+                max_value = max(max(row) for row in site_b_matrix) if site_b_matrix else 1
                 intensity = value / max_value if max_value else 0
                 def hex_to_rgb(h):
                     h=h.lstrip('#'); return tuple(int(h[k:k+2],16) for k in (0,2,4))
@@ -1005,3 +1054,33 @@ class ComparisonAnalysisGenerator:
         except Exception as e:
             print(f"❌ HTML 저장 실패: {e}")
             raise
+    
+    def _generate_summary_from_real_data(self, stores: List[str], end_date: str) -> List[Dict]:
+        """실제 데이터에서 summary 정보 생성"""
+        summary_data = []
+        
+        for store in stores:
+            store_data = self.comparison_data.get(store, {})
+            daily_trends = store_data.get('daily_trends', {})
+            
+            # 현재 기간과 이전 기간의 총 방문자 수 계산
+            current_visitors = sum(daily_trends.get('current', []))
+            previous_visitors = sum(daily_trends.get('previous', []))
+            
+            # 성장률 계산
+            if previous_visitors > 0:
+                total_delta_pct = round(((current_visitors - previous_visitors) / previous_visitors) * 100, 1)
+            else:
+                total_delta_pct = 0.0
+            
+            summary_data.append({
+                "site": store,
+                "end_date": end_date,
+                "curr_total": current_visitors,
+                "prev_total": previous_visitors,
+                "weekday_delta_pct": total_delta_pct,  # 실제 데이터에서는 주중/주말 구분 없이 전체 성장률 사용
+                "weekend_delta_pct": total_delta_pct,
+                "total_delta_pct": total_delta_pct,
+            })
+        
+        return summary_data
