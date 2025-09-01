@@ -71,6 +71,39 @@ class ComparisonDataExtractor:
         
         return result
 
+    def extract_daily_trends(self, site: str, end_date: str, period: int) -> Dict[str, Any]:
+        """일별 방문 추이 데이터 추출"""
+        try:
+            raw_data = self._extract_raw_comparison_data(site, end_date, period)
+            if raw_data:
+                return self._transform_daily_trends_data(raw_data, end_date, period)
+            return self._create_empty_daily_trends(period)
+        except Exception as e:
+            logging.error(f"Failed to extract daily trends for {site}: {e}")
+            return self._create_empty_daily_trends(period)
+
+    def extract_customer_composition(self, site: str, end_date: str, period: int) -> Dict[str, Any]:
+        """고객 구성 데이터 추출"""
+        try:
+            raw_data = self._extract_raw_comparison_data(site, end_date, period)
+            if raw_data:
+                return self._transform_customer_composition_data(raw_data, end_date, period)
+            return self._create_empty_customer_composition()
+        except Exception as e:
+            logging.error(f"Failed to extract customer composition for {site}: {e}")
+            return self._create_empty_customer_composition()
+
+    def extract_time_age_pattern(self, site: str, end_date: str, period: int) -> Dict[str, Any]:
+        """시간대/연령대 패턴 데이터 추출"""
+        try:
+            raw_data = self._extract_raw_comparison_data(site, end_date, period)
+            if raw_data:
+                return self._transform_time_age_heatmap_data(raw_data)
+            return self._create_empty_time_age_heatmap()
+        except Exception as e:
+            logging.error(f"Failed to extract time age pattern for {site}: {e}")
+            return self._create_empty_time_age_heatmap()
+
     def _extract_raw_comparison_data(self, site: str, end_date: str, days: int) -> List[Tuple]:
         """원본 비교 데이터 추출"""
         if not get_site_client:
