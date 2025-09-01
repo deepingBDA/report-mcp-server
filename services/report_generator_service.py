@@ -140,20 +140,15 @@ class ReportGeneratorService:
                     }
                 else:
                     return {
-                        "result": report_result,
-                        "html_content": None,
-                        "file_path": None,
-                        "generation_summary": "HTML 파일을 찾을 수 없음",
-                        "performance": performance_data
+                        "result": "failed",
+                        "html_content": None
                     }
                     
             except Exception as e:
                 logger.error(f"HTML 파일 읽기 실패: {e}")
                 return {
-                    "result": workflow_result,
-                    "html_content": None,
-                    "file_path": None,
-                    "generation_summary": f"HTML 파일 처리 오류: {e}"
+                    "result": "failed",
+                    "html_content": None
                 }
             
         except Exception as e:
