@@ -564,11 +564,28 @@ class ComparisonAnalysisGenerator:
             b_data = self.comparison_data[site_b].get("customer_composition", {})
             
             if a_data and b_data:
-                # 실제 데이터 사용
-                age_totals_a = a_data.get("age_distribution", [12, 18, 22, 35, 20, 28, 3])
-                age_totals_b = b_data.get("age_distribution", [10, 17, 21, 32, 22, 30, 4])
-                male_share_a = a_data.get("male_ratio", [0.52, 0.56, 0.51, 0.46, 0.42, 0.55, 0.50])
-                male_share_b = b_data.get("male_ratio", [0.50, 0.53, 0.49, 0.47, 0.44, 0.56, 0.50])
+                # 실제 데이터 사용 - 금주 데이터 (curr_*)
+                curr_male_a = a_data.get("curr_male_counts", [])
+                curr_female_a = a_data.get("curr_female_counts", [])
+                curr_male_b = b_data.get("curr_male_counts", [])
+                curr_female_b = b_data.get("curr_female_counts", [])
+                
+                # 연령대별 총합과 성별 비율 계산
+                age_totals_a = [male + female for male, female in zip(curr_male_a, curr_female_a)]
+                age_totals_b = [male + female for male, female in zip(curr_male_b, curr_female_b)]
+                
+                # 성별 비율 계산 (남성 비율)
+                male_share_a = [male / (male + female) if (male + female) > 0 else 0.5 
+                               for male, female in zip(curr_male_a, curr_female_a)]
+                male_share_b = [male / (male + female) if (male + female) > 0 else 0.5 
+                               for male, female in zip(curr_male_b, curr_female_b)]
+                
+                # 데이터가 6개 연령대인 경우 7개로 맞추기 (0~9세 추가)
+                if len(age_totals_a) == 6:
+                    age_totals_a.append(0)  # 0~9세 추가
+                    age_totals_b.append(0)
+                    male_share_a.append(0.5)
+                    male_share_b.append(0.5)
             else:
                 # 빈 데이터인 경우 빈 배열 사용
                 age_totals_a = [0] * 7
