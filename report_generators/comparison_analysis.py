@@ -417,7 +417,7 @@ class ComparisonAnalysisGenerator:
         cat_h = int(24*ui_scale)
         category_x = padding + chart_width - cat_w - int(6*ui_scale)
         svg_elements.extend([
-            f'<rect x="{category_x}" y="{category_y}" width="{cat_w}" height="{cat_h}" fill="#f9fafb" stroke="#e5e7eb" rx="4" />',
+            f'<rect x="{category_x}" y="{category_y}" width="{cat_w}" height="{cat_h}" fill="transparent" stroke="#e5e7eb" rx="4" />',
             f'<line x1="{category_x+int(8*ui_scale)}" y1="{category_y+cat_h//2}" x2="{category_x+int(22*ui_scale)}" y2="{category_y+cat_h//2}" stroke="#10b981" stroke-width="{max(2,int(3*ui_scale))}" />',
             f'<text x="{category_x+int(30*ui_scale)}" y="{category_y+int(0.67*cat_h)}" font-size="{int(14*ui_scale)}" fill="#374151">변화율</text>'
         ])
@@ -428,7 +428,7 @@ class ComparisonAnalysisGenerator:
         leg_w = int(96*ui_scale)
         leg_h = int(24*ui_scale)
         svg_elements.extend([
-            f'<rect x="{legend_x}" y="{legend_y}" width="{leg_w}" height="{leg_h}" fill="#f9fafb" stroke="#e5e7eb" rx="4" />',
+            f'<rect x="{legend_x}" y="{legend_y}" width="{leg_w}" height="{leg_h}" fill="transparent" stroke="#e5e7eb" rx="4" />',
             f'<rect x="{legend_x+int(6*ui_scale)}" y="{legend_y+int(6*ui_scale)}" width="{int(10*ui_scale)}" height="{int(10*ui_scale)}" fill="#93c5fd" stroke="#3b82f6" stroke-width="0.5" />',
             f'<text x="{legend_x+int(20*ui_scale)}" y="{legend_y+int(0.65*leg_h)}" font-size="{int(13*ui_scale)}" fill="#374151">전주</text>',
             f'<rect x="{legend_x+int(52*ui_scale)}" y="{legend_y+int(6*ui_scale)}" width="{int(10*ui_scale)}" height="{int(10*ui_scale)}" fill="#fca5a5" stroke="#ef4444" stroke-width="0.5" />',
