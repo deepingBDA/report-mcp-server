@@ -250,8 +250,8 @@ class ComparisonDataExtractor:
         # 금주 데이터 집계
         curr_age_gender_stats = self._aggregate_age_gender(current_data)
         
-        # 연령대 순서 정의 (60대+부터 10대까지)
-        age_order = ['60대+', '50대', '40대', '30대', '20대', '10대']
+        # 연령대 순서 정의 (60대+부터 0~9세까지)
+        age_order = ['60대+', '50대', '40대', '30대', '20대', '10대', '0~9세']
         
         # 결과 배열 생성 (전주/금주 분리, 실제 방문객 수)
         prev_male_counts = []
@@ -295,8 +295,10 @@ class ComparisonDataExtractor:
         for row in data:
             date, hour, age, gender, person_seq = row
             
-            # 연령대 그룹화
-            if age < 20:
+            # 연령대 그룹화 (0~9세 추가)
+            if age < 10:
+                age_group = '0~9세'
+            elif age < 20:
                 age_group = '10대'
             elif age < 30:
                 age_group = '20대'
@@ -348,8 +350,10 @@ class ComparisonDataExtractor:
                 if not (curr_start <= date_dt <= end_dt):
                     continue
             
-            # 연령대 그룹화
-            if age < 20:
+            # 연령대 그룹화 (0~9세 추가)
+            if age < 10:
+                age_group = '0~9세'
+            elif age < 20:
                 age_group = '10대'
             elif age < 30:
                 age_group = '20대'
@@ -370,10 +374,10 @@ class ComparisonDataExtractor:
             
             heatmap_stats[hour][age_group] += 1
         
-        # 연령대 순서 정의 (60대+부터 10대까지)
-        age_order = ['60대+', '50대', '40대', '30대', '20대', '10대']
+        # 연령대 순서 정의 (60대+부터 0~9세까지)
+        age_order = ['60대+', '50대', '40대', '30대', '20대', '10대', '0~9세']
         
-        # 히트맵 매트릭스 생성 (24시간 × 6연령대)
+        # 히트맵 매트릭스 생성 (24시간 × 7연령대)
         heatmap_matrix = []
         for age_group in age_order:
             row = []
@@ -412,7 +416,7 @@ class ComparisonDataExtractor:
     def _create_empty_time_age_heatmap(self) -> Dict[str, Any]:
         """빈 시간대별 연령대별 히트맵 데이터 생성"""
         return {
-            'age_groups': ['60대+', '50대', '40대', '30대', '20대', '10대'],
+            'age_groups': ['60대+', '50대', '40대', '30대', '20대', '10대', '0~9세'],
             'hours': list(range(24)),
-            'data': [[0 for _ in range(24)] for _ in range(6)]
+            'data': [[0 for _ in range(24)] for _ in range(7)]
         } 

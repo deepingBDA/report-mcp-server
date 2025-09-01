@@ -584,12 +584,8 @@ class ComparisonAnalysisGenerator:
                 male_share_b = [male / (male + female) if (male + female) > 0 else 0.5 
                                for male, female in zip(curr_male_b, curr_female_b)]
                 
-                # 데이터가 6개 연령대인 경우 7개로 맞추기 (0~9세 추가)
-                if len(age_totals_a) == 6:
-                    age_totals_a.append(0)  # 0~9세 추가
-                    age_totals_b.append(0)
-                    male_share_a.append(0.5)
-                    male_share_b.append(0.5)
+                # 데이터가 7개 연령대가 되도록 보장 (이제 comparison_extractor에서 7개 제공)
+                # 추가 처리 없음 - 이미 7개 연령대 구조
             else:
                 # 빈 데이터인 경우 빈 배열 사용
                 age_totals_a = [0] * 7
@@ -886,13 +882,13 @@ class ComparisonAnalysisGenerator:
         return block_html
 
     def _generate_time_age_heatmap(self, stores: List[str] = None) -> str:
-        """시간대 연령대별 방문 패턴 히트맵 생성 (24시간 × 6연령대)"""
+        """시간대 연령대별 방문 패턴 히트맵 생성 (24시간 × 7연령대)"""
         if stores is None:
             stores = ["A매장", "B매장"]
         
         # 시간대와 연령대 정의 (comparison_extractor와 일치)
         time_slots = list(range(24))  # 0~23시
-        age_groups = ["60대+", "50대", "40대", "30대", "20대", "10대"]  # 실제 데이터 구조와 일치
+        age_groups = ["60대+", "50대", "40대", "30대", "20대", "10대", "0~9세"]  # 실제 데이터 구조와 일치
         
         # 실제 데이터가 있으면 사용, 없으면 빈 데이터 사용
         if hasattr(self, 'comparison_data') and self.comparison_data and len(self.comparison_data) >= 2:
@@ -904,33 +900,33 @@ class ComparisonAnalysisGenerator:
             b_heatmap = self.comparison_data[site_b].get("time_age_heatmap", {})
             
             if a_heatmap and b_heatmap:
-                # 실제 데이터 사용 (data는 6개 연령대 x 24시간 매트릭스)
+                # 실제 데이터 사용 (data는 7개 연령대 x 24시간 매트릭스)
                 site_a_data = a_heatmap.get("data", [])
                 site_b_data = b_heatmap.get("data", [])
                 
-                # 데이터를 시간대별로 재구성 (6연령대 x 24시간을 24시간 x 6연령대로 변환)
-                if site_a_data and site_b_data and len(site_a_data) == 6 and len(site_b_data) == 6:
-                    # 6연령대 x 24시간을 24시간 x 6연령대로 변환
+                # 데이터를 시간대별로 재구성 (7연령대 x 24시간을 24시간 x 7연령대로 변환)
+                if site_a_data and site_b_data and len(site_a_data) == 7 and len(site_b_data) == 7:
+                    # 7연령대 x 24시간을 24시간 x 7연령대로 변환
                     site_a_matrix = []
                     site_b_matrix = []
                     
                     for hour in range(24):
-                        site_a_hour = [site_a_data[age_idx][hour] for age_idx in range(6)]
-                        site_b_hour = [site_b_data[age_idx][hour] for age_idx in range(6)]
+                        site_a_hour = [site_a_data[age_idx][hour] for age_idx in range(7)]
+                        site_b_hour = [site_b_data[age_idx][hour] for age_idx in range(7)]
                         site_a_matrix.append(site_a_hour)
                         site_b_matrix.append(site_b_hour)
                 else:
                     # 데이터가 없으면 빈 매트릭스 생성
-                    site_a_matrix = [[0 for _ in range(6)] for _ in range(24)]
-                    site_b_matrix = [[0 for _ in range(6)] for _ in range(24)]
+                    site_a_matrix = [[0 for _ in range(7)] for _ in range(24)]
+                    site_b_matrix = [[0 for _ in range(7)] for _ in range(24)]
             else:
                 # 빈 데이터인 경우 빈 매트릭스 생성
-                site_a_matrix = [[0 for _ in range(6)] for _ in range(24)]
-                site_b_matrix = [[0 for _ in range(6)] for _ in range(24)]
+                site_a_matrix = [[0 for _ in range(7)] for _ in range(24)]
+                site_b_matrix = [[0 for _ in range(7)] for _ in range(24)]
         else:
             # 데이터가 없으면 빈 매트릭스 생성
-            site_a_matrix = [[0 for _ in range(6)] for _ in range(24)]
-            site_b_matrix = [[0 for _ in range(6)] for _ in range(24)]
+            site_a_matrix = [[0 for _ in range(7)] for _ in range(24)]
+            site_b_matrix = [[0 for _ in range(7)] for _ in range(24)]
         
         # 차트 크기 설정
         width = 1100  # 더 compact
