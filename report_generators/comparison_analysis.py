@@ -590,6 +590,13 @@ class ComparisonAnalysisGenerator:
                     age_totals_b.append(0)
                     male_share_a.append(0.5)
                     male_share_b.append(0.5)
+                
+                # 디버깅: 실제 데이터 값 출력
+                print(f"DEBUG - 고객 구성 실제 데이터:")
+                print(f"  A매장 연령대별 총합: {age_totals_a}")
+                print(f"  B매장 연령대별 총합: {age_totals_b}")
+                print(f"  A매장 남성 비율: {male_share_a}")
+                print(f"  B매장 남성 비율: {male_share_b}")
             else:
                 # 빈 데이터인 경우 빈 배열 사용
                 age_totals_a = [0] * 7
