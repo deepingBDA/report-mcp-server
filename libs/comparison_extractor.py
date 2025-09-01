@@ -45,7 +45,7 @@ class ComparisonDataExtractor:
                     # 데이터 변환
                     daily_trends = self._transform_daily_trends_data(raw_data, end_date, days)
                     customer_composition = self._transform_customer_composition_data(raw_data, end_date, days)
-                    time_age_heatmap = self._transform_time_age_heatmap_data(raw_data)
+                    time_age_heatmap = self._transform_time_age_heatmap_data(raw_data, end_date, days)
                     
                     result[site] = {
                         'daily_trends': daily_trends,
@@ -98,7 +98,7 @@ class ComparisonDataExtractor:
         try:
             raw_data = self._extract_raw_comparison_data(site, end_date, period)
             if raw_data:
-                return self._transform_time_age_heatmap_data(raw_data)
+                return self._transform_time_age_heatmap_data(raw_data, end_date, period)
             return self._create_empty_time_age_heatmap()
         except Exception as e:
             logging.error(f"Failed to extract time age pattern for {site}: {e}")
@@ -322,13 +322,31 @@ class ComparisonDataExtractor:
         
         return age_gender_stats
 
-    def _transform_time_age_heatmap_data(self, raw_data: List[Tuple]) -> Dict[str, Any]:
-        """3번 카드용: 시간대별 연령대별 히트맵 데이터 변환"""
-        # 시간대별 연령대별 집계
+    def _transform_time_age_heatmap_data(self, raw_data: List[Tuple], end_date: str = None, days: int = 7) -> Dict[str, Any]:
+        """3번 카드용: 시간대별 연령대별 히트맵 데이터 변환 (금주 데이터만 사용)"""
+        # 날짜 범위 계산 (금주 데이터만 필터링)
+        if end_date:
+            from datetime import datetime, timedelta
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            curr_start = end_dt - timedelta(days=days-1)
+        else:
+            curr_start = None
+            end_dt = None
+        
+        # 시간대별 연령대별 집계 (금주 데이터만)
         heatmap_stats = {}
         
         for row in raw_data:
             date, hour, age, gender, person_seq = row
+            
+            # 날짜 필터링 (금주 데이터만)
+            if curr_start and end_dt:
+                date_str = date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else str(date)
+                date_dt = datetime.strptime(date_str, '%Y-%m-%d')
+                
+                # 금주 범위에 속하지 않으면 스킵
+                if not (curr_start <= date_dt <= end_dt):
+                    continue
             
             # 연령대 그룹화
             if age < 20:
