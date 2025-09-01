@@ -56,7 +56,9 @@ class ComparisonAnalysisGenerator:
                 days=period
             )
         except Exception as e:
+            import traceback
             print(f"실제 데이터 추출 실패, 더미 데이터 사용: {e}")
+            print(f"상세 오류: {traceback.format_exc()}")
             self.comparison_data = {}
         
         # 더미 데이터 생성 (매장별로 다른 패턴)

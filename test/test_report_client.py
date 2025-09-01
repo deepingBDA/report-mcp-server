@@ -79,7 +79,7 @@ class ReportClient:
             print(f"❌ Summary Report 생성 실패: {e}")
             return None
     
-    def generate_comparison_report(self, stores=["타워팰리스점", "만촌힐스테이트점"], end_date="2025-08-29", period=7):
+    def generate_comparison_report(self, stores=["타워팰리스점", "만촌힐스테이트점"], end_date="2025-04-30", period=7):
         """Comparison Report 생성 및 서버 URL로 열기"""
         url = f"{self.server_url}/mcp/tools/report-generator/comparison-analysis-html"
         
