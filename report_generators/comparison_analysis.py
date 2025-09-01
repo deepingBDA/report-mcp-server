@@ -590,13 +590,6 @@ class ComparisonAnalysisGenerator:
                     age_totals_b.append(0)
                     male_share_a.append(0.5)
                     male_share_b.append(0.5)
-                
-                # 디버깅: 실제 데이터 값 출력
-                print(f"DEBUG - 고객 구성 실제 데이터:")
-                print(f"  A매장 연령대별 총합: {age_totals_a}")
-                print(f"  B매장 연령대별 총합: {age_totals_b}")
-                print(f"  A매장 남성 비율: {male_share_a}")
-                print(f"  B매장 남성 비율: {male_share_b}")
             else:
                 # 빈 데이터인 경우 빈 배열 사용
                 age_totals_a = [0] * 7
@@ -763,17 +756,34 @@ class ComparisonAnalysisGenerator:
             # 막대 두께를 소폭 감소
             bar_h = min(band_h * 0.60, label_font + 4)
             gap_y = 0.0  # 전주/금주 막대 간격 없음(딱 붙게)
-            # 동적 축 최대치 (전체 값 중 최댓값을 5단위로 반올림)
-            max_val = max(max(m), max(f), max(m_cmp), max(f_cmp)) if m and f and m_cmp and f_cmp else 30.0
-            def round_up_to_5(x: float) -> float:
-                import math
-                return float(int(math.ceil(x / 5.0)) * 5)
-            # 원래 로직 복원: 데이터 최대값(여유 5%)을 기준으로 30%~100% 범위에서 스케일링
-            axis_max = max(30.0, min(100.0, round_up_to_5(max_val * 1.05)))
+            # Min-Max 기반 스케일링 (차이를 더 명확하게 표시)
+            all_values = []
+            if m and f and m_cmp and f_cmp:
+                all_values.extend(m + f + m_cmp + f_cmp)
+            
+            if all_values and max(all_values) > 0:
+                min_val = min([v for v in all_values if v > 0])  # 0 제외한 최소값
+                max_val = max(all_values)
+                
+                # 최소값을 기준으로 스케일링 범위 조정
+                # 최소값이 차트에서 약 30% 정도 되도록, 최대값이 85% 정도가 되도록 조정
+                axis_min = min_val * 0.7  # 최소값보다 30% 작게
+                axis_max = max_val * 1.15  # 최대값보다 15% 크게
+                
+                # 너무 좁은 범위는 방지
+                if (axis_max - axis_min) < (max_val * 0.3):
+                    axis_max = axis_min + (max_val * 0.5)
+            else:
+                axis_min = 0.0
+                axis_max = 30.0
 
             def w_of(p: float) -> float:
-                p = max(0.0, min(axis_max, p))
-                return (plot_w / 2) * (p / axis_max)
+                if axis_max == axis_min:
+                    return 0.0
+                # Min-Max 스케일링 적용
+                p = max(axis_min, min(axis_max, p))
+                normalized = (p - axis_min) / (axis_max - axis_min)
+                return (plot_w / 2) * normalized
 
             svg: List[str] = []
             svg.append(f"<rect x='0' y='0' width='{width}' height='{height}' fill='white' />")
@@ -797,9 +807,6 @@ class ComparisonAnalysisGenerator:
                 color_m_curr = male_curr_colors[i]
                 color_f_curr = female_curr_colors[i]
                 center_gap = max(56.0, band_h * 0.30)
-                def w_of(p: float) -> float:
-                    p = max(0.0, min(axis_max, p))
-                    return (plot_w / 2) * (p / axis_max)
                 svg.append(f"<rect x='{center_x - center_gap - w_of(m[i]):.1f}' y='{curr_y:.1f}' width='{w_of(m[i]):.1f}' height='{bar_h:.1f}' fill='{color_m_curr}' />")
                 svg.append(f"<rect x='{center_x + center_gap:.1f}' y='{curr_y:.1f}' width='{w_of(f[i]):.1f}' height='{bar_h:.1f}' fill='{color_f_curr}' />")
                 # 전주(아래 막대) - 동일 두께, 딱 붙임
