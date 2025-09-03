@@ -26,3 +26,39 @@ class ReportSummarizerRequest(BaseModel):
     json_data: Optional[Dict[str, Any]] = Field(default=None, description="JSON 리포트 데이터")
     report_type: Optional[str] = Field(default="daily_report", description="리포트 타입")
     max_tokens: Optional[int] = Field(default=500, description="요약 최대 토큰 수")
+
+
+class DailyReportEmailRequest(BaseModel):
+    """Request model for daily report email workflow."""
+    report_date: Optional[str] = Field(default=None, description="리포트 날짜 (YYYY-MM-DD). 기본값: 어제 날짜")
+
+
+class DailyReportTestRequest(BaseModel):
+    """Request model for daily report testing."""
+    use_sample_data: Optional[bool] = Field(default=False, description="Use sample data instead of real database query")
+
+
+class SchedulerConfigResponse(BaseModel):
+    """Response model for scheduler configuration."""
+    result: str = Field(description="결과 상태")
+    status: Optional[Dict[str, Any]] = Field(default=None, description="스케줄러 상태 정보")
+    config: Optional[Dict[str, Any]] = Field(default=None, description="스케줄러 설정")
+
+
+class DailyReportResponse(BaseModel):
+    """Response model for daily report operations."""
+    result: str = Field(description="결과 상태 (success/failed)")
+    message: str = Field(description="결과 메시지")
+    report_date: Optional[str] = Field(default=None, description="리포트 날짜")
+    execution_time: Optional[str] = Field(default=None, description="실행 시간")
+    step_failed: Optional[str] = Field(default=None, description="실패한 단계")
+    error_details: Optional[str] = Field(default=None, description="에러 상세 정보")
+    details: Optional[Dict[str, Any]] = Field(default=None, description="추가 실행 정보")
+
+
+class EmailServiceResponse(BaseModel):
+    """Response model for email service operations."""
+    success: bool = Field(description="이메일 전송 성공 여부")
+    message: Optional[str] = Field(default=None, description="결과 메시지")
+    recipients: Optional[List[str]] = Field(default=None, description="수신자 목록")
+    response: Optional[Dict[str, Any]] = Field(default=None, description="이메일 서비스 응답")

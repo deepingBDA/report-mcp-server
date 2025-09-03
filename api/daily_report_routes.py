@@ -6,18 +6,19 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from services.daily_report_service import DailyReportService
+from models.request_models import DailyReportResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/mcp/tools", tags=["daily-report"])
 
 
-@router.post("/daily-report-email")
+@router.post("/daily-report-email", response_model=DailyReportResponse)
 async def send_daily_report_email(
     report_date: Optional[str] = Query(
         default=None,
         description="리포트 날짜 (YYYY-MM-DD). 기본값: 어제 날짜"
     )
-):
+) -> DailyReportResponse:
     """
     [DAILY_REPORT_EMAIL] Generate daily report, summarize with GPT, and send via email.
     
@@ -92,8 +93,8 @@ async def send_daily_report_email(
         )
 
 
-@router.get("/daily-report-status")
-async def get_daily_report_status():
+@router.get("/daily-report-status", response_model=dict)
+async def get_daily_report_status() -> dict:
     """
     [DAILY_REPORT_STATUS] Get the current status of daily report service.
     
@@ -125,13 +126,13 @@ async def get_daily_report_status():
         )
 
 
-@router.post("/daily-report-test")
+@router.post("/daily-report-test", response_model=dict)
 async def test_daily_report_workflow(
     use_sample_data: bool = Query(
         default=False,
         description="Use sample data instead of real database query"
     )
-):
+) -> dict:
     """
     [DAILY_REPORT_TEST] Test daily report workflow with sample data.
     
