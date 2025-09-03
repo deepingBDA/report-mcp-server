@@ -13,7 +13,7 @@ class EmailSenderService:
     
     def __init__(self):
         """Initialize the email sender service."""
-        self.plus_agent_url = os.getenv("PLUS_AGENT_URL", "http://localhost:8000")
+        self.plus_agent_url = os.getenv("PLUS_AGENT_URL", "http://192.168.49.157:32770")
         self.email_endpoint = f"{self.plus_agent_url}/mcp/tools/send-email"
         self.timeout = 30.0
     
