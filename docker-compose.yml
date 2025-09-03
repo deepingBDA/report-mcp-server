@@ -17,7 +17,7 @@ services:
     restart: unless-stopped
     networks:
       - pi_network
-      - plus-agent-network
+      - plus-agent-llm-server_plus-agent-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
@@ -27,5 +27,5 @@ services:
 networks:
   pi_network:
     external: true
-  plus-agent-network:
+  plus-agent-llm-server_plus-agent-network:
     external: true
