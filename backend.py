@@ -15,6 +15,7 @@ from api.report_generator_routes import router as report_generator_router
 from api.report_viewer_routes import router as report_viewer_router
 from api.report_summarizer_routes import router as report_summarizer_router
 from api.scheduler_routes import router as scheduler_router
+from api.daily_report_routes import router as daily_report_router
 from libs.html_output_config import HTML_OUTPUT_ROOT
 from scheduler.daily_report_scheduler import start_daily_scheduler, stop_daily_scheduler
 
@@ -87,6 +88,7 @@ app.include_router(report_generator_router)
 app.include_router(report_viewer_router)
 app.include_router(report_summarizer_router)
 app.include_router(scheduler_router)
+app.include_router(daily_report_router)
 
 # Mount static files for HTML reports
 reports_path = Path(HTML_OUTPUT_ROOT)

@@ -5,6 +5,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 import traceback
+import httpx
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -17,8 +18,6 @@ from config.scheduler_config import (
     get_email_config,
     validate_scheduler_config
 )
-from services.report_generator_service import ReportGeneratorService
-from services.report_summarizer_service import ReportSummarizerService
 from services.email_sender_service import EmailSenderService
 
 logger = logging.getLogger(__name__)
@@ -35,10 +34,11 @@ class DailyReportScheduler:
         self.daily_config = get_daily_report_config()
         self.email_config = get_email_config()
         
-        # Initialize services
-        self.report_generator = ReportGeneratorService()
-        self.report_summarizer = ReportSummarizerService()
+        # Initialize email service for testing
         self.email_sender = EmailSenderService()
+        
+        # API endpoint URL for daily report
+        self.daily_report_url = "http://localhost:8002/mcp/tools/daily-report-email"
     
     async def start_scheduler(self):
         """Start the scheduler with configured jobs."""
@@ -111,142 +111,58 @@ class DailyReportScheduler:
         logger.info(f"Added daily report job: execute at {hour:02d}:{minute:02d} daily")
     
     async def _execute_daily_report(self):
-        """Execute daily report generation and email sending."""
+        """Execute daily report by calling the API endpoint."""
         start_time = datetime.now()
-        logger.info("=== Starting Daily Report Execution ===")
+        logger.info("=== Starting Daily Report Execution via API ===")
         
         try:
             # Calculate report date (previous day)
             report_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-            logger.info(f"Generating daily report for date: {report_date}")
+            logger.info(f"Calling daily report API for date: {report_date}")
             
-            # Step 1: Generate report
-            logger.info("Step 1: Generating summary report...")
-            report_result = await self._generate_daily_report(report_date)
-            
-            if not report_result.get("success", False):
-                logger.error(f"Report generation failed: {report_result}")
-                await self._send_error_notification("보고서 생성 실패", report_result.get("error", "Unknown error"))
-                return
-            
-            html_content = report_result.get("html_content")
-            if not html_content:
-                logger.error("Report generated but no HTML content received")
-                await self._send_error_notification("보고서 생성 실패", "HTML 콘텐츠가 없습니다")
-                return
-            
-            logger.info("Report generated successfully")
-            
-            # Step 2: Summarize report
-            logger.info("Step 2: Summarizing report content...")
-            summary_result = await self._summarize_report(html_content, report_date)
-            
-            if not summary_result.get("success", False):
-                logger.error(f"Report summarization failed: {summary_result}")
-                await self._send_error_notification("보고서 요약 실패", summary_result.get("error", "Unknown error"))
-                return
-            
-            summary = summary_result.get("summary")
-            if not summary:
-                logger.error("Report summarized but no summary content received")
-                await self._send_error_notification("보고서 요약 실패", "요약 콘텐츠가 없습니다")
-                return
-            
-            logger.info("Report summarized successfully")
-            
-            # Step 3: Send email
-            logger.info("Step 3: Sending email...")
-            email_result = await self._send_daily_email(summary, html_content, report_date)
-            
-            if not email_result.get("success", False):
-                logger.error(f"Email sending failed: {email_result}")
-                await self._send_error_notification("이메일 전송 실패", email_result.get("error", "Unknown error"))
-                return
-            
-            logger.info("Email sent successfully")
-            
-            # Success!
-            execution_time = datetime.now() - start_time
-            logger.info(f"=== Daily Report Execution Completed Successfully ===")
-            logger.info(f"Execution time: {execution_time}")
-            logger.info(f"Report date: {report_date}")
-            logger.info(f"Summary length: {len(summary)} characters")
-            logger.info(f"HTML content length: {len(html_content)} characters")
+            # Call the daily report API endpoint
+            async with httpx.AsyncClient(timeout=300.0) as client:  # 5 minute timeout
+                response = await client.post(
+                    self.daily_report_url,
+                    params={"report_date": report_date}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    if result.get("result") == "success":
+                        execution_time = datetime.now() - start_time
+                        logger.info(f"=== Daily Report API Call Completed Successfully ===")
+                        logger.info(f"Execution time: {execution_time}")
+                        logger.info(f"Report date: {report_date}")
+                        logger.info(f"API Response: {result.get('message')}")
+                        
+                        # Log additional details if available
+                        details = result.get("details", {})
+                        if details:
+                            logger.info(f"Summary length: {details.get('summary_length')} characters")
+                            logger.info(f"HTML length: {details.get('html_length')} characters")
+                            logger.info(f"Email recipients: {details.get('email_recipients')}")
+                    else:
+                        error_msg = result.get("message", "API call failed")
+                        logger.error(f"Daily report API failed: {error_msg}")
+                        await self._send_error_notification("API 호출 실패", error_msg)
+                        
+                else:
+                    error_msg = f"HTTP {response.status_code}: {response.text}"
+                    logger.error(f"Daily report API call failed: {error_msg}")
+                    await self._send_error_notification("API 호출 실패", error_msg)
+                    
+        except httpx.TimeoutException:
+            error_msg = "API call timed out after 5 minutes"
+            logger.error(f"Daily report API timeout: {error_msg}")
+            await self._send_error_notification("API 타임아웃", error_msg)
             
         except Exception as e:
             logger.error(f"Daily report execution failed: {e}")
             logger.error(traceback.format_exc())
             await self._send_error_notification("데일리 리포트 실행 실패", str(e))
     
-    async def _generate_daily_report(self, report_date: str) -> Dict[str, Any]:
-        """Generate daily report using ReportGeneratorService."""
-        try:
-            result = self.report_generator.generate_summary_report(
-                data_type=self.daily_config["data_type"],
-                end_date=report_date,
-                stores=self.daily_config["stores"],
-                periods=self.daily_config["periods"][0]
-            )
-            
-            return {
-                "success": result.get("result") == "success",
-                "html_content": result.get("html_content"),
-                "error": None if result.get("result") == "success" else "Report generation failed"
-            }
-            
-        except Exception as e:
-            logger.error(f"Report generation error: {e}")
-            return {
-                "success": False,
-                "html_content": None,
-                "error": str(e)
-            }
-    
-    async def _summarize_report(self, html_content: str, report_date: str) -> Dict[str, Any]:
-        """Summarize report using ReportSummarizerService."""
-        try:
-            result = self.report_summarizer.summarize_html_report(
-                html_content=html_content,
-                report_type=f"daily_report_{report_date}",
-                max_tokens=self.daily_config["max_tokens"]
-            )
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"Report summarization error: {e}")
-            return {
-                "success": False,
-                "summary": None,
-                "error": str(e)
-            }
-    
-    async def _send_daily_email(
-        self,
-        summary: str,
-        html_content: Optional[str],
-        report_date: str
-    ) -> Dict[str, Any]:
-        """Send daily email using EmailSenderService."""
-        try:
-            # Include HTML content if configured
-            html_to_include = html_content if self.email_config["include_html"] else None
-            
-            result = await self.email_sender.send_daily_report_email(
-                summary=summary,
-                html_content=html_to_include,
-                report_date=report_date,
-                sender_name=self.daily_config["sender_name"]
-            )
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"Email sending error: {e}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
     
     async def _send_error_notification(self, error_type: str, error_message: str):
         """Send error notification email."""
@@ -275,21 +191,36 @@ class DailyReportScheduler:
             logger.error(f"Failed to send error notification: {e}")
     
     async def test_daily_report_execution(self) -> Dict[str, Any]:
-        """Test daily report execution manually (for debugging)."""
-        logger.info("=== Testing Daily Report Execution ===")
+        """Test daily report execution manually by calling API endpoint."""
+        logger.info("=== Testing Daily Report Execution via API ===")
         
         try:
-            # Use today's date for testing
-            test_date = datetime.now().strftime("%Y-%m-%d")
+            # Use yesterday's date for testing
+            test_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
             
-            # Execute the same flow as scheduled job
-            await self._execute_daily_report()
-            
-            return {
-                "success": True,
-                "message": "Test execution completed successfully",
-                "test_date": test_date
-            }
+            # Call the daily report API endpoint
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                response = await client.post(
+                    self.daily_report_url,
+                    params={"report_date": test_date}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    
+                    return {
+                        "success": result.get("result") == "success",
+                        "message": "Test execution completed",
+                        "test_date": test_date,
+                        "api_response": result
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"HTTP {response.status_code}: {response.text}",
+                        "message": "Test execution failed",
+                        "test_date": test_date
+                    }
             
         except Exception as e:
             logger.error(f"Test execution failed: {e}")
