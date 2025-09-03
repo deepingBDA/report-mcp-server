@@ -15,7 +15,7 @@ def get_scheduler_config() -> Dict[str, Any]:
     return {
         "enabled": os.getenv("SCHEDULER_ENABLED", "true").lower() == "true",
         "timezone": os.getenv("SCHEDULER_TIMEZONE", "Asia/Seoul"),
-        "daily_report_time": os.getenv("DAILY_REPORT_TIME", "15:10"),
+        "daily_report_time": os.getenv("DAILY_REPORT_TIME", "15:25"),
         "daily_report_enabled": os.getenv("DAILY_REPORT_ENABLED", "true").lower() == "true",
     }
 
