@@ -121,20 +121,36 @@ class DailyReportService:
             }
     
     async def _generate_report(self, report_date: str) -> Dict[str, Any]:
-        """Generate HTML report."""
+        """Generate HTML report via HTTP API."""
+        import httpx
+        import json
+        
         try:
-            result = self.report_generator.generate_summary_report(
-                data_type=self.daily_config["data_type"],
-                end_date=report_date,
-                stores=self.daily_config["stores"],
-                periods=self.daily_config["periods"][0]
-            )
+            # Report Server의 자체 API 호출
+            url = "http://localhost:8002/mcp/tools/report-generator/summary-report-html"
             
-            return {
-                "success": result.get("result") == "success",
-                "html_content": result.get("html_content"),
-                "error": None if result.get("result") == "success" else "Report generation failed"
+            payload = {
+                "data_type": self.daily_config["data_type"],
+                "end_date": report_date,
+                "stores": self.daily_config["stores"],
+                "periods": self.daily_config["periods"][0]
             }
+            
+            logger.info(f"📤 Daily Report HTML 요청 중...")
+            logger.info(f"   URL: {url}")
+            logger.info(f"   Data: {json.dumps(payload, ensure_ascii=False, indent=2)}")
+            
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+                
+                result = response.json()
+                
+                return {
+                    "success": result.get("result") == "success",
+                    "html_content": result.get("html_content"),
+                    "error": None if result.get("result") == "success" else "Report generation failed"
+                }
             
         except Exception as e:
             logger.error(f"Report generation error: {e}")
