@@ -11,9 +11,12 @@ services:
       - "8002:8002"
     env_file:
       - .env
+    environment:
+      - TZ=Asia/Seoul
     volumes:
       - ./data:/app/data
       - ./mcp_tools:/app/mcp_tools
+      - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     networks:
       - pi_network
