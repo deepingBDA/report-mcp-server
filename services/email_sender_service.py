@@ -13,9 +13,9 @@ class EmailSenderService:
     
     def __init__(self):
         """Initialize the email sender service."""
-        self.plus_agent_url = os.getenv("PLUS_AGENT_URL", "http://192.168.49.157:32770")
+        self.plus_agent_url = os.getenv("PLUS_AGENT_URL", "http://plus-agent-llm-server:8000")
         self.email_endpoint = f"{self.plus_agent_url}/mcp/tools/send-email"
-        self.timeout = 30.0
+        self.timeout = 120.0  # Increase timeout to 2 minutes for heavy report processing
     
     async def send_daily_report_email(
         self,
