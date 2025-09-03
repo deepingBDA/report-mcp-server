@@ -133,7 +133,7 @@ class DailyReportService:
                 "data_type": self.daily_config["data_type"],
                 "end_date": report_date,
                 "stores": self.daily_config["stores"],
-                "periods": self.daily_config["periods"][0]
+                "periods": [self.daily_config["periods"][0]]  # List[int] 형태로 전송
             }
             
             logger.info(f"📤 Daily Report HTML 요청 중...")
