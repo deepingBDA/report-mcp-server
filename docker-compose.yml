@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile.mcp
     container_name: report-mcp-server
     ports:
-      - "3000:3000"
+      - "3002:3000"
     env_file:
       - .env
     environment:
