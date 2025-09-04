@@ -106,8 +106,7 @@ app.include_router(mcp_tools_router)
 
 # Create MCP server
 mcp = FastMCP(
-    app,
-    name="Report MCP Server",
+    "Report MCP Server",
     description="MCP server for generating reports and sending emails",
 )
 
@@ -215,7 +214,7 @@ async def comparison_analysis_html(stores: str, end_date: str, period: int = 7, 
         }
 
 # Mount the MCP server
-mcp.mount()
+mcp.mount(app)
 
 # Mount static files for HTML reports
 reports_path = Path(HTML_OUTPUT_ROOT)
