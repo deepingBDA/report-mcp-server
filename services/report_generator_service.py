@@ -49,12 +49,20 @@ class ReportGeneratorService:
             generator = SummaryReportGenerator()
             
             # Generate the report
-            report_result = generator.run(
-                data_type=data_type,
-                end_date=end_date,
-                stores=stores,
-                periods=periods
-            )
+            try:
+                logger.info(f"🔧 Starting generator.run() with: {len(stores)} stores, periods={periods}")
+                report_result = generator.run(
+                    data_type=data_type,
+                    end_date=end_date,
+                    stores=stores,
+                    periods=periods
+                )
+                logger.info(f"✅ generator.run() completed successfully")
+            except Exception as gen_error:
+                logger.error(f"❌ generator.run() failed with error: {gen_error}")
+                import traceback
+                logger.error(f"❌ Full traceback: {traceback.format_exc()}")
+                raise
             
             # Try to read the generated HTML file
             try:
