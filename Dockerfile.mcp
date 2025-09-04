@@ -32,4 +32,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000 || exit 1
 
 # Run MCP server
-CMD ["fastmcp", "run", "mcp_server.py", "--port", "3000", "--host", "0.0.0.0"]
+CMD ["fastmcp", "dev", "mcp_server.py"]
