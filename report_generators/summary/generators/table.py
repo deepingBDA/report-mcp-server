@@ -15,7 +15,7 @@ from ..templates import (
     TABLE_WEEKLY_ROW_TEMPLATE,
     TABLE_FOOTER_TEMPLATE,
 )
-from ..data.extractors import fetch_same_weekday_series, fetch_weekly_series
+from ..extractors.extractors import fetch_same_weekday_series, fetch_weekly_series
 
 
 class TableCardGenerator:

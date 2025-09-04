@@ -14,7 +14,7 @@ from .templates import (
     DAILY_SECTION_TEMPLATE,
     WEEKLY_SECTION_TEMPLATE,
 )
-from .data.extractors import create_extractor
+from .extractors.extractors import create_extractor
 from .generators.summary import (
     SummaryCardGenerator,
     ActionCardGenerator,
