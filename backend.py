@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from fastmcp import FastMCP
 
 from config.settings import setup_logging
 from config.scheduler_config import validate_scheduler_config, print_config_summary
@@ -91,6 +92,17 @@ app.include_router(report_summarizer_router)
 app.include_router(scheduler_router)
 app.include_router(daily_report_router)
 app.include_router(mcp_tools_router)
+
+# =============================================================================
+# MCP SERVER SETUP
+# =============================================================================
+
+# Create MCP server
+mcp = FastMCP(
+    app,
+    name="Report MCP Server",
+    description="MCP server for generating reports and sending emails",
+)
 
 # Mount static files for HTML reports
 reports_path = Path(HTML_OUTPUT_ROOT)

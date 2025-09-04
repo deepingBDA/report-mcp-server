@@ -75,6 +75,9 @@ class ReportGeneratorService:
                     periods=periods
                 )
                 logger.info(f"✅ generator.run() completed successfully")
+                logger.info(f"🔍 Report result status: {report_result.get('status', 'unknown')}")
+                if report_result.get('status') == 'error':
+                    logger.error(f"❌ Report generation returned error: {report_result.get('error', 'No error message')}")
             except Exception as gen_error:
                 logger.error(f"❌ generator.run() failed with error: {gen_error}")
                 import traceback

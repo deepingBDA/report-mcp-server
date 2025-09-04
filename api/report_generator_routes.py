@@ -14,10 +14,13 @@ router = APIRouter(prefix="/mcp/tools/report-generator", tags=["report-generator
 async def summary_report_html(request: SummaryReportRequest):
     """[SUMMARY_REPORT] Generate a summary report HTML with specified data type."""
     logger.info(f"summary_report_html 호출: data_type={request.data_type}, end_date={request.end_date}")
+    logger.info(f"🔧 Raw request.stores: {request.stores} (type: {type(request.stores)})")
     
     try:
         # Normalize stores list
+        logger.info(f"🔧 Before normalize_stores_list: {request.stores}")
         stores_list = ReportGeneratorService.normalize_stores_list(request.stores)
+        logger.info(f"🔧 After normalize_stores_list: {stores_list} (length: {len(stores_list)})")
         
         # Generate report
         result = ReportGeneratorService.generate_summary_report(
