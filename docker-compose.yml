@@ -1,12 +1,12 @@
 version: '3.8'
 
 services:
-  # Report MCP Server - DA-agent tools as HTTP MCP server
-  report-mcp-server:
+  # Report REST API Server
+  report-rest-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: report-mcp-server
+    container_name: report-rest-api
     ports:
       - "8002:8002"
     env_file:
@@ -23,6 +23,35 @@ services:
       - report_bridge_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Report MCP Server - Separate MCP server using FastMCP
+  report-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: report-mcp-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Seoul
+      - REST_API_BASE_URL=http://report-rest-api:8002
+    volumes:
+      - ./data:/app/data
+      - ./mcp_tools:/app/mcp_tools
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    networks:
+      - pi_network
+      - report_bridge_network
+    depends_on:
+      - report-rest-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://report-rest-api:8002/health"]
       interval: 30s
       timeout: 10s
       retries: 3
