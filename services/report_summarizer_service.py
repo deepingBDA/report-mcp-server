@@ -210,6 +210,12 @@ class ReportSummarizerService:
 ---
 보고서 내용:
 {content}
+
+**중요:** 위 내용을 이메일 본문에 적합한 일반 텍스트 형태로 작성해주세요. 
+- 마크다운 문법(#, **, -, 등) 사용하지 마세요
+- 이모지와 구분선(----)만 사용해주세요  
+- 섹션은 이모지로 구분하고 줄바꿈으로 정리해주세요
+- 읽기 쉬운 일반 텍스트 형태로 작성해주세요
 """
     
     def _create_json_summarization_prompt(self, json_text: str, report_type: str) -> str:
