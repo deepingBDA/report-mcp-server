@@ -40,7 +40,7 @@ class ReportGeneratorService:
         data_type: str,
         end_date: str,
         stores: List[str],
-        periods: int
+        periods: List[int]
     ) -> Dict[str, Any]:
         """Generate summary report."""
         try:

@@ -27,7 +27,7 @@ async def summary_report_html(request: SummaryReportRequest):
             data_type=request.data_type or "visitor",
             end_date=request.end_date,
             stores=stores_list,
-            periods=(request.periods[0] if request.periods else 1)
+            periods=(request.periods if request.periods else [1])
         )
         
         return result
