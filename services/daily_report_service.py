@@ -190,9 +190,9 @@ class DailyReportService:
             # Include HTML content if configured
             html_to_include = html_content if self.email_config["include_html"] else None
             
-            result = await self.email_sender.send_daily_report_email(
+            result = await self.email_sender.send_daily_report_with_pdf(
                 summary=summary,
-                html_content=html_to_include,
+                html_content=html_content,  # PDF 첨부는 무조건 전체 HTML 사용
                 report_date=report_date,
                 sender_name=self.daily_config["sender_name"]
             )
