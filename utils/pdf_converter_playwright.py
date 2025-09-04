@@ -90,7 +90,7 @@ class PlaywrightPDFConverter:
                 
                 logger.info(f"Content dimensions: {content_info['scrollWidth']}x{content_info['scrollHeight']}px")
                 
-                # Inject CSS to set exact page size
+                # Inject CSS to set exact page size and safe fonts
                 await page.add_style_tag(content=f'''
                     @page {{
                         size: {content_info['scrollWidth']}px {content_info['scrollHeight']}px;
@@ -107,6 +107,12 @@ class PlaywrightPDFConverter:
                     
                     body {{
                         box-sizing: border-box;
+                        font-family: "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", Arial, sans-serif !important;
+                    }}
+                    
+                    /* Override all font-family declarations */
+                    * {{
+                        font-family: "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", Arial, sans-serif !important;
                     }}
                 ''')
                 
