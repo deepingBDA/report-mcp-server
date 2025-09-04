@@ -90,8 +90,10 @@ class PlaywrightPDFConverter:
                 
                 logger.info(f"Content dimensions: {content_info['scrollWidth']}x{content_info['scrollHeight']}px")
                 
-                # Inject CSS to set exact page size and safe fonts
+                # Inject CSS to set exact page size and Pretendard font
                 await page.add_style_tag(content=f'''
+                    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+                    
                     @page {{
                         size: {content_info['scrollWidth']}px {content_info['scrollHeight']}px;
                         margin: 0;
@@ -107,17 +109,17 @@ class PlaywrightPDFConverter:
                     
                     body {{
                         box-sizing: border-box;
-                        font-family: "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", Arial, sans-serif !important;
+                        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif !important;
                     }}
                     
-                    /* Override all font-family declarations */
+                    /* Override all font-family declarations with Pretendard */
                     * {{
-                        font-family: "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", "맑은 고딕", Arial, sans-serif !important;
+                        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif !important;
                     }}
                 ''')
                 
-                # Wait for CSS to apply
-                await page.wait_for_timeout(500)
+                # Wait for CSS and web fonts to load
+                await page.wait_for_timeout(2000)
                 
                 # Default options
                 default_options = {
