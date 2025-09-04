@@ -1,0 +1,8 @@
+{
+    "recipients": [
+        "junho.song@deepingsource.io"
+    ],
+    "description": "Report MCP Server email recipients",
+    "last_updated": "2025-09-04",
+    "note": "이 파일을 수정하여 리포트 수신자를 관리하세요"
+}
