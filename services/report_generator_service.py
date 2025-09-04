@@ -78,17 +78,6 @@ class ReportGeneratorService:
                 logger.info(f"🔍 Report result status: {report_result.get('status', 'unknown')}")
                 if report_result.get('status') == 'error':
                     logger.error(f"❌ Report generation returned error: {report_result.get('error', 'No error message')}")
-                elif report_result.get('status') == 'success':
-                    # New modular version returns HTML directly
-                    html_content = report_result.get('html')
-                    if html_content:
-                        logger.info(f"✅ Got HTML directly from generator: {len(html_content)} characters")
-                        return {
-                            "result": "success",
-                            "html_content": html_content
-                        }
-                    else:
-                        logger.error("❌ Generator returned success but no HTML content")
             except Exception as gen_error:
                 logger.error(f"❌ generator.run() failed with error: {gen_error}")
                 import traceback

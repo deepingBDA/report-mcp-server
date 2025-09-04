@@ -78,6 +78,17 @@ class SummaryReportGenerator:
             # 리포트 생성
             html = builder.build_report(end_date, list(stores), periods)
             
+            # HTML을 기존 경로에 저장 (PDF 변환 등을 위해)
+            try:
+                from libs.html_output_config import save_html_report
+                # periods[0]를 사용하여 리포트 타입 결정
+                report_type = 'visitor_daily' if periods[0] == 1 else 'visitor_weekly'
+                save_result = save_html_report(html, report_type, end_date, save_both=True)
+                print(f"✅ HTML 파일 저장 성공: {save_result.get('saved_files', [])}")
+            except Exception as save_error:
+                print(f"❌ HTML 파일 저장 실패: {save_error}")
+                # 저장 실패해도 HTML은 반환 (기본 기능은 유지)
+            
             return {
                 "status": "success",
                 "html": html,
