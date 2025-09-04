@@ -18,10 +18,6 @@ class EmailRequest(BaseModel):
     )
 
 
-class EmailTestRequest(BaseModel):
-    """Request model for testing email connection."""
-    
-    message: Optional[str] = Field(default="테스트 메시지", description='Test message content')
 
 
 class DailyReportEmailRequest(BaseModel):

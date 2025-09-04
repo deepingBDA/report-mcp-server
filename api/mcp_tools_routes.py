@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from models.email_models import (
-    EmailRequest, EmailTestRequest, DailyReportEmailRequest, 
+    EmailRequest, DailyReportEmailRequest, 
     EmailResponse, EmailConfigResponse
 )
 from services.aws_ses_service import AWSSESService
@@ -100,33 +100,6 @@ async def send_daily_report(request: DailyReportEmailRequest) -> EmailResponse:
         )
 
 
-@router.post(
-    "/test-email",
-    response_model=EmailResponse,
-    summary="Test email connection and sending",
-    description="""
-    Test AWS SES SMTP connection and email sending functionality.
-    
-    Sends a simple test message to verify:
-    - SMTP configuration is correct
-    - AWS credentials are valid
-    - Recipients are reachable
-    - Email service is working properly
-    """
-)
-async def test_email(request: EmailTestRequest) -> EmailResponse:
-    """Test email connection and sending."""
-    try:
-        service = get_ses_service()
-        result = await service.test_connection()
-        return EmailResponse(**result)
-        
-    except Exception as e:
-        logger.error(f"Email test failed: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Email test failed: {str(e)}"
-        )
 
 
 @router.get(

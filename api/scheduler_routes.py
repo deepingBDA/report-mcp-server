@@ -32,30 +32,6 @@ async def get_scheduler_status_endpoint():
         raise HTTPException(status_code=500, detail=f"스케줄러 상태 조회 실패: {e}")
 
 
-@router.post("/test-daily-report")
-async def test_daily_report_execution():
-    """[TEST_DAILY_REPORT] Execute daily report generation and email sending manually for testing."""
-    logger.info("test daily report 수동 실행 호출")
-    
-    try:
-        result = await test_scheduler_execution()
-        
-        if result.get("success", False):
-            return {
-                "result": "success",
-                "message": "테스트 실행이 완료되었습니다",
-                "execution_result": result
-            }
-        else:
-            return {
-                "result": "failed", 
-                "message": f"테스트 실행 실패: {result.get('error', 'Unknown error')}",
-                "execution_result": result
-            }
-        
-    except Exception as e:
-        logger.error(f"Test daily report execution 실행 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"테스트 실행 실패: {e}")
 
 
 @router.post("/execute-daily-report")
@@ -109,33 +85,6 @@ async def execute_daily_report_manual(
         raise HTTPException(status_code=500, detail=f"수동 실행 실패: {e}")
 
 
-@router.post("/send-test-email")
-async def send_test_email():
-    """[SEND_TEST_EMAIL] Send a test email to verify email configuration."""
-    logger.info("send test email 호출")
-    
-    try:
-        # Get scheduler and test email connection
-        scheduler = await get_scheduler()
-        
-        result = await scheduler.email_sender.test_email_connection()
-        
-        if result.get("success", False):
-            return {
-                "result": "success",
-                "message": "테스트 이메일이 성공적으로 전송되었습니다",
-                "email_result": result
-            }
-        else:
-            return {
-                "result": "failed",
-                "message": f"테스트 이메일 전송 실패: {result.get('error', 'Unknown error')}",
-                "email_result": result
-            }
-        
-    except Exception as e:
-        logger.error(f"Test email sending 실행 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"테스트 이메일 전송 실패: {e}")
 
 
 @router.get("/config")
