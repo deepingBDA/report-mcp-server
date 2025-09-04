@@ -207,5 +207,10 @@ async def health_check() -> Dict[str, Any]:
             }
 
 if __name__ == "__main__":
-    # Run the MCP server
-    mcp.run()
+    # Run the MCP server with HTTP transport for Docker
+    mcp.run(
+        transport="http",
+        host="0.0.0.0",
+        port=3000,
+        path="/mcp"
+    )
