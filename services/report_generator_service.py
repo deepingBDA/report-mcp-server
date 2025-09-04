@@ -89,7 +89,7 @@ class ReportGeneratorService:
                 from libs.html_output_config import get_full_html_path, save_html_report, cleanup_old_reports
                 
                 # Determine report type based on periods
-                report_type = 'visitor_daily' if periods == 1 else 'visitor_weekly'
+                report_type = 'visitor_daily' if periods[0] == 1 else 'visitor_weekly'
                 
                 # Get the file path
                 _, latest_path = get_full_html_path(report_type, end_date, only_latest=True)
