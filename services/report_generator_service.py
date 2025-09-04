@@ -45,8 +45,25 @@ class ReportGeneratorService:
         """Generate summary report."""
         try:
             logger.info("📊 Using modular summary report generator")
-            from report_generators.summary_report import SummaryReportGenerator
-            generator = SummaryReportGenerator()
+            try:
+                logger.info("🔧 Attempting to import SummaryReportGenerator...")
+                from report_generators.summary_report import SummaryReportGenerator
+                logger.info("✅ Import successful")
+            except Exception as import_error:
+                logger.error(f"❌ Import failed: {import_error}")
+                import traceback
+                logger.error(f"❌ Import traceback: {traceback.format_exc()}")
+                raise
+                
+            try:
+                logger.info("🔧 Attempting to create generator instance...")
+                generator = SummaryReportGenerator()
+                logger.info("✅ Generator instance created successfully")
+            except Exception as init_error:
+                logger.error(f"❌ Generator initialization failed: {init_error}")
+                import traceback
+                logger.error(f"❌ Init traceback: {traceback.format_exc()}")
+                raise
             
             # Generate the report
             try:
