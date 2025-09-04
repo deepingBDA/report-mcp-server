@@ -2,9 +2,13 @@
 
 import smtplib
 import logging
+import os
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from config.email_config import get_smtp_config, get_recipients
@@ -95,6 +99,70 @@ class AWSSESService:
                 "message": "이메일 전송 실패"
             }
     
+    async def send_daily_report_with_pdf(
+        self,
+        summary: str,
+        html_content: str,
+        report_date: Optional[str] = None,
+        sender_name: str = "Daily Report Bot"
+    ) -> Dict[str, Any]:
+        """
+        Send daily report email with text summary and PDF attachment.
+        
+        Args:
+            summary: The summarized report content (text)
+            html_content: HTML report content to convert to PDF
+            report_date: Optional report date for subject line
+            sender_name: Name of the sender
+            
+        Returns:
+            Dict containing success status and response details
+        """
+        try:
+            # Import PDF converter
+            from utils.pdf_converter_playwright import convert_html_to_pdf_css_size
+            import tempfile
+            
+            # Create temporary HTML file
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as temp_html:
+                temp_html.write(html_content)
+                temp_html_path = temp_html.name
+            
+            # Convert HTML to PDF using CSS page size method
+            pdf_path = convert_html_to_pdf_css_size(temp_html_path)
+            
+            # Clean up temporary HTML file
+            os.unlink(temp_html_path)
+            
+            # Create email subject
+            subject = "📊 데일리 리포트"
+            if report_date:
+                subject += f" - {report_date}"
+            
+            # Send email with PDF attachment
+            result = await self.send_email_with_attachment(
+                subject=subject,
+                content=summary,
+                content_type="text",
+                attachment_path=pdf_path,
+                attachment_name=f"daily_report_{report_date or 'today'}.pdf",
+                sender_name=sender_name
+            )
+            
+            # Clean up PDF file
+            if os.path.exists(pdf_path):
+                os.unlink(pdf_path)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to send daily report with PDF: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "PDF 첨부 리포트 이메일 전송 실패"
+            }
+
     async def send_daily_report_email(
         self,
         summary: str,
@@ -313,3 +381,155 @@ class AWSSESService:
         """
         
         return html_template
+    
+    async def send_email_with_attachment(
+        self,
+        subject: str,
+        content: str,
+        attachment_path: str,
+        attachment_name: str,
+        content_type: str = "text",
+        sender_name: str = "Report Server",
+        custom_recipients: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Send email with file attachment.
+        
+        Args:
+            subject: Email subject line
+            content: Email body content
+            attachment_path: Path to file to attach
+            attachment_name: Name for the attachment
+            content_type: "html" or "text" (default: "text")
+            sender_name: Display name of sender
+            custom_recipients: Optional custom recipients list
+            
+        Returns:
+            Dict containing success status and response details
+        """
+        try:
+            # Use custom recipients if provided, otherwise use configured recipients
+            recipients = custom_recipients if custom_recipients else self.recipients
+            
+            if not recipients:
+                raise ValueError("No email recipients configured")
+            
+            # Check if attachment file exists
+            if not os.path.exists(attachment_path):
+                raise FileNotFoundError(f"Attachment file not found: {attachment_path}")
+            
+            # Send email with attachment
+            result = await self._send_smtp_email_with_attachment(
+                recipients=recipients,
+                subject=subject,
+                content=content,
+                content_type=content_type,
+                attachment_path=attachment_path,
+                attachment_name=attachment_name,
+                sender_name=sender_name
+            )
+            
+            logger.info(f"Successfully sent email with attachment: {subject} to {len(recipients)} recipients")
+            return {
+                "success": True,
+                "message": f"Email with attachment sent successfully to {len(recipients)} recipients",
+                "recipients": recipients,
+                "subject": subject,
+                "sender": f"{sender_name} <{self.smtp_config['sender_email']}>",
+                "attachment": attachment_name,
+                "content_type": content_type,
+                "sent_at": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to send email with attachment: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "첨부파일 이메일 전송 실패"
+            }
+    
+    async def _send_smtp_email_with_attachment(
+        self,
+        recipients: List[str],
+        subject: str,
+        content: str,
+        content_type: str,
+        attachment_path: str,
+        attachment_name: str,
+        sender_name: str
+    ) -> Dict[str, Any]:
+        """
+        Send email with attachment via SMTP.
+        
+        Args:
+            recipients: List of recipient email addresses
+            subject: Email subject
+            content: Email content
+            content_type: Content type (html or text)
+            attachment_path: Path to attachment file
+            attachment_name: Name for attachment
+            sender_name: Sender display name
+            
+        Returns:
+            Dict with send results
+        """
+        try:
+            smtp_username = self.smtp_config['username']
+            smtp_password = self.smtp_config['password']
+            smtp_server = self.smtp_config['server']
+            smtp_port = self.smtp_config['port']
+            sender_email = self.smtp_config['sender_email']
+            
+            # Connect to SMTP server and send email
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_username, smtp_password)
+                
+                for recipient in recipients:
+                    # Create multipart message for each recipient
+                    message = MIMEMultipart()
+                    message['From'] = f'{sender_name} <{sender_email}>'
+                    message['Subject'] = subject
+                    message['To'] = recipient
+                    
+                    # Add body content
+                    if content_type == 'text':
+                        message.attach(MIMEText(content, 'plain', 'utf-8'))
+                    else:
+                        # HTML format
+                        html_content = content.replace('\n', '<br>')
+                        plain_content = content
+                        message.attach(MIMEText(plain_content, 'plain', 'utf-8'))
+                        message.attach(MIMEText(html_content, 'html', 'utf-8'))
+                    
+                    # Add attachment
+                    with open(attachment_path, 'rb') as attachment:
+                        part = MIMEBase('application', 'octet-stream')
+                        part.set_payload(attachment.read())
+                    
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        'Content-Disposition',
+                        f'attachment; filename= {attachment_name}'
+                    )
+                    message.attach(part)
+                    
+                    server.send_message(message)
+            
+            return {"success": True}
+            
+        except smtplib.SMTPAuthenticationError as e:
+            error_msg = f"SMTP authentication failed: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+            
+        except smtplib.SMTPException as e:
+            error_msg = f"SMTP error: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+            
+        except Exception as e:
+            error_msg = f"Unexpected error sending email with attachment: {e}"
+            logger.error(error_msg)
+            raise Exception(error_msg)

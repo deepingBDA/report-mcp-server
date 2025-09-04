@@ -15,6 +15,48 @@ class EmailSenderService:
         """Initialize the email sender service."""
         self.ses_service = AWSSESService()
     
+    async def send_daily_report_with_pdf(
+        self,
+        summary: str,
+        html_content: str,
+        report_date: Optional[str] = None,
+        sender_name: str = "Daily Report Bot"
+    ) -> Dict[str, Any]:
+        """
+        Send daily report email with text summary and PDF attachment.
+        
+        Args:
+            summary: The summarized report content (text)
+            html_content: HTML report content to convert to PDF
+            report_date: Optional report date for subject line
+            sender_name: Name of the sender
+            
+        Returns:
+            Dict containing success status and response details
+        """
+        try:
+            result = await self.ses_service.send_daily_report_with_pdf(
+                summary=summary,
+                html_content=html_content,
+                report_date=report_date,
+                sender_name=sender_name
+            )
+            
+            if result.get("success"):
+                logger.info(f"Successfully sent daily report with PDF attachment")
+            else:
+                logger.error(f"Failed to send daily report with PDF: {result.get('error')}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to send daily report with PDF: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "PDF 첨부 리포트 이메일 전송 실패"
+            }
+
     async def send_daily_report_email(
         self,
         summary: str,
