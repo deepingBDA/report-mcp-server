@@ -4,7 +4,6 @@
 help:
 	@echo "Available commands:"
 	@echo "  make server  - Pull latest changes and restart docker services"
-	@echo "  make reports - Generate latest reports (daily, weekly, comparison)"
 	@echo "  make pull    - Pull latest changes from git"
 	@echo "  make build   - Build docker images"
 	@echo "  make up      - Start docker services"
@@ -41,8 +40,3 @@ logs:
 status:
 	@echo "📊 Docker container status:"
 	docker compose ps
-
-# Generate latest reports
-reports:
-	@echo "📊 Generating latest reports..."
-	python3 scripts/generate_latest_reports.py

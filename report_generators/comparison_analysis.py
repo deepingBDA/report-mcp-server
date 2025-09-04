@@ -157,41 +157,41 @@ class ComparisonAnalysisGenerator:
         time_age_card = self._build_time_age_pattern_card(stores)
         
         html = f"""
-<!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{title}</title>
-  <style>
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif; margin: 0; background: #fafafa; color: #111; }}
-    .container {{ max-width: 1080px; margin: 24px auto; padding: 0 16px; }}
-    .page-title {{ margin: 0 0 6px; font-size: 24px; font-weight: 700; }}
-    .page-subtitle {{ margin: 0 0 16px; color: #6b7280; font-size: 14px; }}
-    .card {{ background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }}
-    .card h3 {{ margin: 0 0 8px; font-size: 18px; }}
-    .placeholder {{ color: #9ca3af; font-size: 13px; text-align: center; padding: 20px; }}
-    .summary-list {{ margin: 8px 0 0 16px; padding-left: 16px; line-height: 1.6; }}
-    .summary-list li {{ margin: 6px 0; text-align: left; list-style: disc; }}
-    .chart-container {{ text-align: center; margin: 16px auto; width: 100%; display: flex; justify-content: center; align-items: center; }}
-    .chart-container svg {{ width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px; display: block; margin: 0 auto; }}
-    .dual-chart {{ display: flex; gap: 20px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }}
-    .dual-chart .chart-container {{ flex: 1; min-width: 500px; max-width: 600px; }}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2 class="page-title">{title}</h2>
-    <div class="page-subtitle">비교 분석합니다 {date_range}</div>
-    
-    {summary_card}
-    {daily_trends_card}
-    {composition_card}
-    {time_age_card}
-  </div>
-</body>
-</html>
-"""
+            <!doctype html>
+            <html lang="ko">
+            <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>{title}</title>
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif; margin: 0; background: #fafafa; color: #111; }}
+                .container {{ max-width: 1080px; margin: 24px auto; padding: 0 16px; }}
+                .page-title {{ margin: 0 0 6px; font-size: 24px; font-weight: 700; }}
+                .page-subtitle {{ margin: 0 0 16px; color: #6b7280; font-size: 14px; }}
+                .card {{ background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }}
+                .card h3 {{ margin: 0 0 8px; font-size: 18px; }}
+                .placeholder {{ color: #9ca3af; font-size: 13px; text-align: center; padding: 20px; }}
+                .summary-list {{ margin: 8px 0 0 16px; padding-left: 16px; line-height: 1.6; }}
+                .summary-list li {{ margin: 6px 0; text-align: left; list-style: disc; }}
+                .chart-container {{ text-align: center; margin: 16px auto; width: 100%; display: flex; justify-content: center; align-items: center; }}
+                .chart-container svg {{ width: 100%; height: auto; border: 1px solid #e5e7eb; border-radius: 8px; display: block; margin: 0 auto; }}
+                .dual-chart {{ display: flex; gap: 20px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }}
+                .dual-chart .chart-container {{ flex: 1; min-width: 500px; max-width: 600px; }}
+            </style>
+            </head>
+            <body>
+            <div class="container">
+                <h2 class="page-title">{title}</h2>
+                <div class="page-subtitle">비교 분석합니다 {date_range}</div>
+                
+                {summary_card}
+                {daily_trends_card}
+                {composition_card}
+                {time_age_card}
+            </div>
+            </body>
+            </html>
+            """
         return html
     
     def _build_summary_card(self, comparison_analysis: str) -> str:
@@ -220,11 +220,11 @@ class ComparisonAnalysisGenerator:
             """
 
         return f"""
-<section class="card">
-  <h3>요약카드</h3>
-  {content}
-</section>
-"""
+            <section class="card">
+            <h3>요약카드</h3>
+            {content}
+            </section>
+            """
     
     def _generate_daily_trends_chart(self) -> str:
         """A매장 vs B매장 비교 차트 생성 (좌우 나란히)"""
@@ -282,20 +282,20 @@ class ComparisonAnalysisGenerator:
         
         # 두 차트를 나란히 배치 (중앙 정렬)
         svg = f"""
-<svg viewBox="0 0 {total_width} {chart_height + 2 * padding}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
+            <svg viewBox="0 0 {total_width} {chart_height + 2 * padding}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
 
-  
-  <!-- A매장 차트 (좌측) - 상하 중앙 정렬 -->
-  <g transform="translate({margin}, {padding//2})">
-    {chart_a}
-  </g>
-  
-  <!-- B매장 차트 (우측) - 상하 중앙 정렬 -->
-  <g transform="translate({margin + chart_width + margin}, {padding//2})">
-    {chart_b}
-  </g>
-</svg>
-"""
+            
+            <!-- A매장 차트 (좌측) - 상하 중앙 정렬 -->
+            <g transform="translate({margin}, {padding//2})">
+                {chart_a}
+            </g>
+            
+            <!-- B매장 차트 (우측) - 상하 중앙 정렬 -->
+            <g transform="translate({margin + chart_width + margin}, {padding//2})">
+                {chart_b}
+            </g>
+            </svg>
+            """
         return svg
 
     
@@ -464,10 +464,10 @@ class ComparisonAnalysisGenerator:
         ])
         
         svg = f"""
-<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
-  {''.join(svg_elements)}
-</svg>
-"""
+            <svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg">
+            {''.join(svg_elements)}
+            </svg>
+            """
         return svg
     
     def _build_daily_trends_card(self, stores: List[str]) -> str:
@@ -520,31 +520,31 @@ class ComparisonAnalysisGenerator:
         chart_b = self._generate_single_chart(dates, weekdays, b_prev, b_curr, b_growth, site_b_name, single_w, single_h, padding)
         
         return f"""
-<section class="card">
-  <h3>매장별 일별 방문 추이 비교</h3>
-  <div style="display:flex; gap:24px; align-items:flex-start;">
-    <div style="flex:1; text-align:center;">
-      <div class="chart-container">{chart_a}</div>
-    </div>
-    <div style="flex:1; text-align:center;">
-      <div class="chart-container">{chart_b}</div>
-    </div>
-  </div>
-</section>
-"""
+            <section class="card">
+            <h3>매장별 일별 방문 추이 비교</h3>
+            <div style="display:flex; gap:24px; align-items:flex-start;">
+                <div style="flex:1; text-align:center;">
+                <div class="chart-container">{chart_a}</div>
+                </div>
+                <div style="flex:1; text-align:center;">
+                <div class="chart-container">{chart_b}</div>
+                </div>
+            </div>
+            </section>
+            """
     
     def _build_customer_composition_card(self, stores: List[str] = None) -> str:
         """3. 고객 구성 변화 - 성별/연령대별 막대그래프"""
         chart_svg = self._generate_customer_composition_chart(stores)
         
         return f"""
-<section class="card">
-  <h3>고객 구성 변화</h3>
-  <div class="chart-container">
-    {chart_svg}
-  </div>
-</section>
-"""
+            <section class="card">
+            <h3>고객 구성 변화</h3>
+            <div class="chart-container">
+                {chart_svg}
+            </div>
+            </section>
+            """
     
     def _build_time_age_pattern_card(self, stores: List[str] = None) -> str:
         """4. 시간대 연령대별 방문 패턴 - 히트맵 (매장별 분리)"""
@@ -556,14 +556,14 @@ class ComparisonAnalysisGenerator:
         chart_b = self._generate_single_heatmap(stores[1], 1)
         
         return f"""
-<section class="card">
-  <h3>시간대 연령대별 방문 패턴</h3>
-  <div class="dual-chart">
-    <div class="chart-container">{chart_a}</div>
-    <div class="chart-container">{chart_b}</div>
-  </div>
-</section>
-"""
+        <section class="card">
+        <h3>시간대 연령대별 방문 패턴</h3>
+        <div class="dual-chart">
+            <div class="chart-container">{chart_a}</div>
+            <div class="chart-container">{chart_b}</div>
+        </div>
+        </section>
+        """
     
     def _generate_customer_composition_chart(self, stores: List[str] = None) -> str:
         """고객 구성 변화 차트 생성 - 중앙 기준 분기형(왼쪽 남성, 오른쪽 여성) 수평 막대 + 비교 얇은 바.
@@ -883,21 +883,21 @@ class ComparisonAnalysisGenerator:
         b_top_prev_m, b_top_prev_f = top_age(b_m_cmp, b_f_cmp)
 
         block_html = f"""
-<div style=\"display:flex; gap:24px; align-items:flex-start;\">
-  <div style=\"flex:1; text-align:center;\">
-    <div style=\"margin:0 0 6px; font-size:14px; color:#374151; text-align:center;\">
-      남성 <strong>{a_top_m}</strong>, 여성 <strong>{a_top_f}</strong>가 가장 많이 방문했습니다.
-    </div>
-    <div class=\"chart-container\">{chart_a}</div>
-  </div>
-  <div style=\"flex:1; text-align:center;\">
-    <div style=\"margin:0 0 6px; font-size:14px; color:#374151; text-align:center;\">
-      남성 <strong>{b_top_m}</strong>, 여성 <strong>{b_top_f}</strong>가 가장 많이 방문했습니다.
-    </div>
-    <div class=\"chart-container\">{chart_b}</div>
-  </div>
-</div>
-"""
+        <div style=\"display:flex; gap:24px; align-items:flex-start;\">
+        <div style=\"flex:1; text-align:center;\">
+            <div style=\"margin:0 0 6px; font-size:14px; color:#374151; text-align:center;\">
+            남성 <strong>{a_top_m}</strong>, 여성 <strong>{a_top_f}</strong>가 가장 많이 방문했습니다.
+            </div>
+            <div class=\"chart-container\">{chart_a}</div>
+        </div>
+        <div style=\"flex:1; text-align:center;\">
+            <div style=\"margin:0 0 6px; font-size:14px; color:#374151; text-align:center;\">
+            남성 <strong>{b_top_m}</strong>, 여성 <strong>{b_top_f}</strong>가 가장 많이 방문했습니다.
+            </div>
+            <div class=\"chart-container\">{chart_b}</div>
+        </div>
+        </div>
+        """
         return block_html
 
     def _generate_time_age_heatmap(self, stores: List[str] = None) -> str:
@@ -1052,10 +1052,10 @@ class ComparisonAnalysisGenerator:
         svg_elements.append(f'<rect x="{padding + width//2}" y="{padding}" width="{heatmap_width//2}" height="{heatmap_height}" fill="none" stroke="#e5e7eb" stroke-width="{max(1,int(2*ui_scale))}" rx="4" />')
         
         svg = f"""
-<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
-  {''.join(svg_elements)}
-</svg>
-"""
+        <svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
+        {''.join(svg_elements)}
+        </svg>
+        """
         return svg
 
     def _generate_single_heatmap(self, store_name: str, store_index: int) -> str:
@@ -1149,10 +1149,10 @@ class ComparisonAnalysisGenerator:
         svg_elements.append(f'<rect x="{padding}" y="{padding}" width="{heatmap_width}" height="{heatmap_height}" fill="none" stroke="#e5e7eb" stroke-width="2" rx="4" />')
         
         return f"""
-<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
-  {''.join(svg_elements)}
-</svg>
-"""
+        <svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" xmlns="http://www.w3.org/2000/svg" style="background: white;">
+        {''.join(svg_elements)}
+        </svg>
+        """
 
     @staticmethod
     def _escape_html(text: str) -> str:

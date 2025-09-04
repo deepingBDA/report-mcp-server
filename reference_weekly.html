@@ -1,0 +1,329 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>방문 현황 요약 통계(2025-04-30)</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', Arial, sans-serif; margin: 0; background: #fafafa; color: #111; }
+    .container { max-width: 1080px; margin: 24px auto; padding: 0 16px; }
+    header.page-header { margin-bottom: 16px; }
+    header.page-header h1 { font-size: 22px; margin: 0 0 4px; }
+    .desc { color: #666; font-size: 13px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin: 12px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .card h2, .card h3 { margin: 0 0 8px; font-size: 18px; }
+    .card-header { margin-bottom: 16px; }
+    .card-header h3 { margin: 0 0 4px; font-size: 18px; color: #111; }
+    .card-subtitle { margin: 0; color: #6b7280; font-size: 13px; line-height: 1.4; }
+    .muted { color: #6b7280; font-size: 13px; }
+    .bullets { margin: 8px 0 8px 16px; padding: 0; }
+    .bullets li { margin: 4px 0; }
+    .table-wrap { overflow-x: auto; }
+    table.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.table th, table.table td { border-top: 1px solid #f3f4f6; padding: 8px 10px; text-align: center; }
+    table.table th { background: #f9fafb; color: #374151; font-weight: 600; }
+    td.num { text-align: center; }
+    th.sep-left, td.sep-left { border-left: 1px solid #e5e7eb; }
+    th.sep-right, td.sep-right { border-right: 1px solid #e5e7eb; }
+    td.sep-left, th.sep-left { padding-left: 10px; }
+    td.sep-right, th.sep-right { padding-right: 10px; }
+    .pct-with-chart { display: inline-flex; align-items: center; gap: 8px; }
+    .pct-with-chart .spark { display: inline-flex; align-items: center; gap: 6px; padding: 2px 0; border: none; background: transparent; }
+    .pct-with-chart .spark svg { display: block; }
+    .col-note { font-size: 10px; color: #6b7280; font-weight: 400; margin-top: 2px; }
+    .pct-pos { color: #dc2626; }
+    .pct-neg { color: #1d4ed8; }
+    .pct-zero { color: #374151; }
+    .tabs { display: flex; gap: 8px; margin: 8px 0 16px; }
+    .tab-label { padding: 8px 12px; background: #eef2ff; color: #3730a3; border-radius: 8px; cursor: pointer; user-select: none; }
+    .tab-label:hover { background: #e0e7ff; }
+    input[type="radio"].tab-input { display: none; }
+    .tab-section { display: block; }
+    
+    /* Summary readability */
+    .summary-list { margin: 0; padding: 0 0 0 20px; line-height: 1.6; }
+    .summary-list li { margin: 4px 0; text-align: left; display: list-item; }
+    .action-list { margin: 0; padding: 0 0 0 20px; line-height: 1.6; }
+    .action-list li { margin: 4px 0; text-align: left; display: list-item; }
+    
+    /* 프롬프트 기반 요약 스타일 */
+    .trend-red { color: #7f1d1d; }
+    .badge { 
+        display: inline-block;
+        background: #fee2e2; 
+        border-left: 3px solid #ef4444; 
+        color: #7f1d1d;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    /* Pair recommendations */
+    .pair-list { list-style: none; padding: 0; margin: 8px 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 720px) { .pair-list { grid-template-columns: 1fr 1fr; } }
+    .pair-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; background: #fff; }
+    .pair-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .pair-names { font-weight: 600; font-size: 14px; color: #111; }
+    .criteria-badge { font-size: 11px; color: #3730a3; background: #eef2ff; border: 1px solid #e0e7ff; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+    .pair-note { margin-top: 6px; color: #374151; font-size: 13px; line-height: 1.5; }
+    .pair-question { display: block; margin-top: 6px; color: #6b7280; font-size: 12px; }
+  </style>
+  <!-- section:head -->
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1>방문 현황 요약 통계(2025-04-30)</h1>
+    </header>
+    <div class="sections">
+      
+<section id="section-7" class="tab-section" data-period="section-7">
+  
+<section class="card"> 
+  <h3 style="margin: 0 0 8px 0;">요약</h3>
+  <div style="margin-top: 0;">
+    <ul class="summary-list"><li class="trend-red"><span class="badge">지속 감소 매장: 만촌힐스테이트점 (총·4주 연속)</span></li>
+<li><span class="pct-pos">▲증가 매장</span>: 금천프라임점(<span class="pct-pos">+7.0%</span>), 타워팰리스점(<span class="pct-pos">+4.9%</span>), 마천파크점(<span class="pct-pos">+24.8%</span>), 역삼점(<span class="pct-pos">+8.6%</span>)</li>
+<li><span class="pct-neg">▼감소 매장</span>: 신촌르메이에르점(<span class="pct-neg">-1.7%</span>), 만촌힐스테이트점(<span class="pct-neg">-1.2%</span>)</li></ul>
+  </div>
+  <!-- section:summary -->
+</section>
+
+  
+<section class="card">
+  <div class="card-header">
+    <h3>방문객 증감 요약</h3>
+    <p class="card-subtitle">최근 7일과 전 기간 대비를 비교해 매장별 방문 추세와 최근 4주의 변동을 한눈에 파악합니다.</p>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>매장명</th>
+          <th>최근7일 방문객<div class="col-note">2025-04-24<br>~ 2025-04-30</div></th>
+          <th>전주7일 방문객<div class="col-note">2025-04-17<br>~ 2025-04-23</div></th>
+          <th>평일<br>증감률</th>
+          <th>주말<br>증감률</th>
+          <th>총<br>증감률</th>
+          <th class="sep-left">주차별 평일<br>증감률<div class="col-note">max: 38.9%<br>min: -17.0%</div></th>
+          <th>주차별 주말<br>증감률<div class="col-note">max: 15.6%<br>min: -22.3%</div></th>
+          <th>주차별 총<br>증감률<div class="col-note">max: 24.8%<br>min: -12.5%</div></th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>마천파크점</td>
+          <td class="num">4,727</td>
+          <td class="num">3,789</td>
+          <td class="num"><span class="pct-pos">+38.9%</span></td>
+          <td class="num"><span class="pct-pos">+1.1%</span></td>
+          <td class="num sep-right"><b><span class="pct-pos">+24.8%</span></b></td>
+          <td class="num sep-left"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,19.8 42.0,25.0 78.0,22.2 114.0,2.0'/><circle cx='6.0' cy='19.8' r='2.7' fill='#1d4ed8' />
+<circle cx='42.0' cy='25.0' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='22.2' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='2.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,6.0 42.0,30.1 78.0,2.0 114.0,12.7'/><circle cx='6.0' cy='6.0' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='30.1' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='12.7' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,19.5 42.0,26.1 78.0,21.6 114.0,2.0'/><circle cx='6.0' cy='19.5' r='2.7' fill='#1d4ed8' />
+<circle cx='42.0' cy='26.1' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='21.6' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='2.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+        </tr>
+
+
+        <tr>
+          <td>역삼점</td>
+          <td class="num">6,746</td>
+          <td class="num">6,210</td>
+          <td class="num"><span class="pct-pos">+7.7%</span></td>
+          <td class="num"><span class="pct-pos">+13.6%</span></td>
+          <td class="num sep-right"><b><span class="pct-pos">+8.6%</span></b></td>
+          <td class="num sep-left"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,16.1 42.0,28.3 78.0,6.5 114.0,2.0'/><circle cx='6.0' cy='16.1' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='28.3' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='6.5' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='2.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,14.3 42.0,16.7 78.0,9.2 114.0,2.0'/><circle cx='6.0' cy='14.3' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='16.7' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='9.2' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='2.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,15.7 42.0,25.4 78.0,7.2 114.0,2.0'/><circle cx='6.0' cy='15.7' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='25.4' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='7.2' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='2.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+        </tr>
+
+
+        <tr>
+          <td>금천프라임점</td>
+          <td class="num">3,794</td>
+          <td class="num">3,544</td>
+          <td class="num"><span class="pct-pos">+6.4%</span></td>
+          <td class="num"><span class="pct-pos">+8.7%</span></td>
+          <td class="num sep-right"><b><span class="pct-pos">+7.0%</span></b></td>
+          <td class="num sep-left"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,28.6 42.0,2.0 78.0,19.4 114.0,7.2'/><circle cx='6.0' cy='28.6' r='2.7' fill='#1d4ed8' />
+<circle cx='42.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='19.4' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='7.2' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,21.3 42.0,11.2 78.0,2.0 114.0,6.5'/><circle cx='6.0' cy='21.3' r='2.7' fill='#1d4ed8' />
+<circle cx='42.0' cy='11.2' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='6.5' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,28.2 42.0,2.0 78.0,13.4 114.0,4.6'/><circle cx='6.0' cy='28.2' r='2.7' fill='#1d4ed8' />
+<circle cx='42.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='13.4' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='4.6' r='2.7' fill='#dc2626' /></svg></span></div></td>
+        </tr>
+
+
+        <tr>
+          <td>타워팰리스점</td>
+          <td class="num">12,197</td>
+          <td class="num">11,630</td>
+          <td class="num"><span class="pct-pos">+0.7%</span></td>
+          <td class="num"><span class="pct-pos">+15.6%</span></td>
+          <td class="num sep-right"><b><span class="pct-pos">+4.9%</span></b></td>
+          <td class="num sep-left"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,2.0 42.0,10.3 78.0,24.7 114.0,17.0'/><circle cx='6.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='10.3' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='24.7' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='17.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,14.7 42.0,17.0 78.0,10.3 114.0,2.0'/><circle cx='6.0' cy='14.7' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='17.0' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='10.3' r='2.7' fill='#dc2626' />
+<circle cx='114.0' cy='2.0' r='2.7' fill='#dc2626' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,2.0 42.0,10.5 78.0,20.6 114.0,8.9'/><circle cx='6.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='10.5' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='20.6' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='8.9' r='2.7' fill='#dc2626' /></svg></span></div></td>
+        </tr>
+
+
+        <tr>
+          <td>만촌힐스테이트점</td>
+          <td class="num">10,175</td>
+          <td class="num">10,304</td>
+          <td class="num"><span class="pct-neg">-0.9%</span></td>
+          <td class="num"><span class="pct-neg">-2.1%</span></td>
+          <td class="num sep-right"><b><span class="pct-neg">-1.2%</span></b></td>
+          <td class="num sep-left"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,2.0 42.0,13.4 78.0,18.1 114.0,20.1'/><circle cx='6.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='13.4' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='18.1' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='20.1' r='2.7' fill='#1d4ed8' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,14.5 42.0,2.0 78.0,32.8 114.0,31.3'/><circle cx='6.0' cy='14.5' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='32.8' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='31.3' r='2.7' fill='#1d4ed8' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,2.0 42.0,10.9 78.0,20.5 114.0,22.2'/><circle cx='6.0' cy='2.0' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='10.9' r='2.7' fill='#dc2626' />
+<circle cx='78.0' cy='20.5' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='22.2' r='2.7' fill='#1d4ed8' /></svg></span></div></td>
+        </tr>
+
+
+        <tr>
+          <td>신촌르메이에르점</td>
+          <td class="num">6,800</td>
+          <td class="num">6,919</td>
+          <td class="num"><span class="pct-neg">-1.1%</span></td>
+          <td class="num"><span class="pct-neg">-3.0%</span></td>
+          <td class="num sep-right"><b><span class="pct-neg">-1.7%</span></b></td>
+          <td class="num sep-left"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,4.5 42.0,34.0 78.0,19.5 114.0,19.5'/><circle cx='6.0' cy='4.5' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='34.0' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='19.5' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='19.5' r='2.7' fill='#1d4ed8' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,18.2 42.0,19.6 78.0,34.0 114.0,20.1'/><circle cx='6.0' cy='18.2' r='2.7' fill='#1d4ed8' />
+<circle cx='42.0' cy='19.6' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='34.0' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='20.1' r='2.7' fill='#1d4ed8' /></svg></span></div></td>
+          <td class="num"><div class="pct-with-chart"><span class="spark"><svg width='120' height='36' viewBox='0 0 120 36' xmlns='http://www.w3.org/2000/svg' aria-label='sparkline'><rect x='0' y='0' width='120' height='36' fill='white'/><line x1='6' y1='18.0' x2='114' y2='18.0' stroke='#000000' stroke-width='1'/><text x='111' y='18.0' fill='#6b7280' font-size='10' text-anchor='end' dominant-baseline='middle'>0%</text><polyline fill='none' stroke='#d1d5db' stroke-width='1.2' points='6.0,6.4 42.0,33.9 78.0,34.0 114.0,21.1'/><circle cx='6.0' cy='6.4' r='2.7' fill='#dc2626' />
+<circle cx='42.0' cy='33.9' r='2.7' fill='#1d4ed8' />
+<circle cx='78.0' cy='34.0' r='2.7' fill='#1d4ed8' />
+<circle cx='114.0' cy='21.1' r='2.7' fill='#1d4ed8' /></svg></span></div></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+  <!-- section:table -->
+</section>
+
+  
+<section class="card">
+  <div class="card-header">
+    <h3>매장 성과</h3>
+    <p class="card-subtitle">방문객 수와 전 기간 대비 방문객 증감률을 기준으로 매장별 성과와 위치를 한눈에 확인할 수 있습니다.</p>
+  </div>
+  <div style="text-align: center; margin-top: 16px;">
+<svg width="1000" height="600" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+  <rect x="1" y="1" width="998" height="598" fill="#fff" stroke="#e5e7eb" rx="10" />
+  <line x1=120 y1=480.0 x2=940 y2=480.0 stroke="#eee" /><text x=110 y=484.0 font-size="12" fill="#6b7280" text-anchor="end">-10.0%</text><line x1=120 y1=375.0 x2=940 y2=375.0 stroke="#eee" /><text x=110 y=379.0 font-size="12" fill="#cbd5e1" text-anchor="end">0%</text><line x1=120 y1=270.0 x2=940 y2=270.0 stroke="#eee" /><text x=110 y=274.0 font-size="12" fill="#6b7280" text-anchor="end">10.0%</text><line x1=120 y1=165.0 x2=940 y2=165.0 stroke="#eee" /><text x=110 y=169.0 font-size="12" fill="#6b7280" text-anchor="end">20.0%</text><line x1=120 y1=60.0 x2=940 y2=60.0 stroke="#eee" /><text x=110 y=64.0 font-size="12" fill="#6b7280" text-anchor="end">30.0%</text><line x1=120.0 y1=60 x2=120.0 y2=480 stroke="#eee" /><text x=120.0 y=504 font-size="12" fill="#6b7280" text-anchor="middle">2,000</text><line x1=256.7 y1=60 x2=256.7 y2=480 stroke="#eee" /><text x=256.7 y=504 font-size="12" fill="#6b7280" text-anchor="middle">4,000</text><line x1=393.3 y1=60 x2=393.3 y2=480 stroke="#eee" /><text x=393.3 y=504 font-size="12" fill="#6b7280" text-anchor="middle">6,000</text><line x1=530.0 y1=60 x2=530.0 y2=480 stroke="#eee" /><text x=530.0 y=504 font-size="12" fill="#6b7280" text-anchor="middle">8,000</text><line x1=666.7 y1=60 x2=666.7 y2=480 stroke="#eee" /><text x=666.7 y=504 font-size="12" fill="#6b7280" text-anchor="middle">10,000</text><line x1=803.3 y1=60 x2=803.3 y2=480 stroke="#eee" /><text x=803.3 y=504 font-size="12" fill="#6b7280" text-anchor="middle">12,000</text><line x1=940.0 y1=60 x2=940.0 y2=480 stroke="#eee" /><text x=940.0 y=504 font-size="12" fill="#6b7280" text-anchor="middle">14,000</text>
+  <line x1=120 y1=480.0 x2=940 y2=480.0 stroke="#111" stroke-width="1.6" /><line x1=120.0 y1=60 x2=120.0 y2=480 stroke="#111" stroke-width="1.6" /><line x1=114 y1=480.0 x2=120 y2=480.0 stroke="#111" stroke-width="1" /><line x1=114 y1=375.0 x2=120 y2=375.0 stroke="#111" stroke-width="1" /><line x1=114 y1=270.0 x2=120 y2=270.0 stroke="#111" stroke-width="1" /><line x1=114 y1=165.0 x2=120 y2=165.0 stroke="#111" stroke-width="1" /><line x1=114 y1=60.0 x2=120 y2=60.0 stroke="#111" stroke-width="1" /><line x1=120.0 y1=480.0 x2=120.0 y2=486.0 stroke="#111" stroke-width="1" /><line x1=256.7 y1=480.0 x2=256.7 y2=486.0 stroke="#111" stroke-width="1" /><line x1=393.3 y1=480.0 x2=393.3 y2=486.0 stroke="#111" stroke-width="1" /><line x1=530.0 y1=480.0 x2=530.0 y2=486.0 stroke="#111" stroke-width="1" /><line x1=666.7 y1=480.0 x2=666.7 y2=486.0 stroke="#111" stroke-width="1" /><line x1=803.3 y1=480.0 x2=803.3 y2=486.0 stroke="#111" stroke-width="1" /><line x1=940.0 y1=480.0 x2=940.0 y2=486.0 stroke="#111" stroke-width="1" />
+  <line x1=120 y1=375.0 x2=940 y2=375.0 stroke="#cbd5e1" stroke-width="1.2" /><line x1=529.7 y1=60 x2=529.7 y2=480 stroke="#cbd5e1" stroke-width="1.4" />
+  
+  <circle cx=306.3 cy=115.0 r=11 fill="#dc2626" fill-opacity="0.9" /><circle cx=444.3 cy=284.4 r=11 fill="#10b981" fill-opacity="0.9" /><circle cx=242.6 cy=301.0 r=11 fill="#10b981" fill-opacity="0.9" /><circle cx=816.8 cy=323.8 r=11 fill="#10b981" fill-opacity="0.9" /><circle cx=678.6 cy=388.1 r=11 fill="#1d4ed8" fill-opacity="0.9" /><circle cx=448.0 cy=393.1 r=11 fill="#1d4ed8" fill-opacity="0.9" />
+  <text x=306.3 y=93.0 font-size="14" text-anchor="middle" fill="#dc2626"><tspan x=306.3 dy="0" font-weight="700">마천파크점</tspan><tspan x=306.3 dy="14">(4,727, 24.8%)</tspan></text><text x=444.3 y=262.4 font-size="14" text-anchor="middle" fill="#10b981"><tspan x=444.3 dy="0" font-weight="700">역삼점</tspan><tspan x=444.3 dy="14">(6,746, 8.6%)</tspan></text><text x=242.6 y=279.0 font-size="14" text-anchor="middle" fill="#10b981"><tspan x=242.6 dy="0" font-weight="700">금천프라임점</tspan><tspan x=242.6 dy="14">(3,794, 7.0%)</tspan></text><text x=816.8 y=301.8 font-size="14" text-anchor="middle" fill="#10b981"><tspan x=816.8 dy="0" font-weight="700">타워팰리스점</tspan><tspan x=816.8 dy="14">(12,197, 4.9%)</tspan></text><text x=678.6 y=366.1 font-size="14" text-anchor="middle" fill="#1d4ed8"><tspan x=678.6 dy="0" font-weight="700">만촌힐스테이트점</tspan><tspan x=678.6 dy="14">(10,175, -1.2%)</tspan></text><text x=448.0 y=371.1 font-size="14" text-anchor="middle" fill="#1d4ed8"><tspan x=448.0 dy="0" font-weight="700">신촌르메이에르점</tspan><tspan x=448.0 dy="14">(6,800, -1.7%)</tspan></text>
+  <text x="60.0" y="270.0" transform="rotate(-90 60.0,270.0)" font-size="19" font-weight="600" fill="#374151" text-anchor="middle">증감률 (%)</text>
+  <text x="530.0" y="570" font-size="19" font-weight="600" fill="#374151" text-anchor="middle">방문객 수 (명)</text>
+  
+  <!-- 범례 -->
+  <rect x="860" y="510" width="120" height="70" fill="transparent" stroke="#e5e7eb" rx="5" />
+  <!-- 고성장 (10% 이상) -->
+  <rect x="870" y="522" width="10" height="10" fill="#dc2626" />
+  <text x="885" y="530" font-size="11" fill="#374151">고성장 (10%+)</text>
+  <!-- 안정성장 (0~10%) -->
+  <rect x="870" y="542" width="10" height="10" fill="#10b981" />
+  <text x="885" y="550" font-size="11" fill="#374151">안정성장 (0~10%)</text>
+  <!-- 하락 (0% 이하) -->
+  <rect x="870" y="562" width="10" height="10" fill="#1d4ed8" />
+  <text x="885" y="570" font-size="11" fill="#374151">하락 (0% 이하)</text>
+</svg>
+</div>
+</section>
+
+  
+<section class="card">
+  <h3>다음 단계</h3>
+  <p class="card-subtitle">방문객 수가 유사하고, 전주 대비 방문객 증감률이 반대 흐름을 보이는 두 매장을 비교합니다.</p>
+  <ul class="pair-list">
+    <li class="pair-item">
+        <div class="pair-head">
+            <div class="pair-names">역삼점 vs 신촌르메이에르점</div>
+            <span class="criteria-badge">전주 대비 방문객 증감률 반대 흐름</span>
+        </div>
+        <div class="pair-note">두 매장 평균 방문객: <span class="pct-pos"><b>6,773명</b></span>, 역삼점은 방문객 증가, 신촌르메이에르점은 방문객 감소</div>
+    </li>
+    <li class="pair-item">
+        <div class="pair-head">
+            <div class="pair-names">마천파크점 vs 금천프라임점</div>
+            <span class="criteria-badge">전주 대비 방문객 증감률 반대 흐름</span>
+        </div>
+        <div class="pair-note">두 매장 평균 방문객: <span class="pct-pos"><b>4,261명</b></span>, 마천파크점은 방문객 증가, 금천프라임점은 방문객 감소</div>
+    </li>
+</ul>
+  <!-- section:next -->
+</section>
+
+  
+<section class="card">
+  <h2>지표 설명</h2>
+  <p class="muted">이 표는 각 매장의 평일 증감률, 주말 증감률, 그리고 전체 기간(총) 증감률을 나타냅니다.</p>
+  <ul class="bullets">
+    <li><b>평일 증감률</b>: 해당 매장의 평일 방문자 수가 전 기간 대비 얼마나 증가 감소했는지를 백분율로 표시</li>
+    <li><b>주말 증감률</b>: 주말(토·일) 방문자 수의 변동률</li>
+    <li><b>총 증감률</b>: 평일과 주말을 합산한 전체 기간 대비 변동률</li>
+    <li><b>주차별 평일/주말/총 증감률</b>: 최근 4주(금주 포함)의 전주 대비 방문율을 주차별로 비교</li>
+  </ul>
+  <p class="muted">매장별 상승·하락 추세를 진단하고, 최근 4주간의 증감률 변화를 통해 해당 추세가 일시적인지, 지속적인지 판단할 수 있습니다.</p>
+  <p class="muted">지속적인 추세를 보이는 매장은 면밀히 관찰이 필요합니다.</p>
+  <!-- section:explanation -->
+</section>
+
+</section>
+
+    </div>
+  </div>
+</body>
+</html>

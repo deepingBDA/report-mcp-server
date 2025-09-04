@@ -13,6 +13,7 @@ def svg_sparkline(
 ) -> str:
     if not values:
         values = [0.0]
+    
     n = len(values)
     use_minmax = (
         min_override is not None
