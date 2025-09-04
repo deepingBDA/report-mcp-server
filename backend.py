@@ -105,10 +105,7 @@ app.include_router(mcp_tools_router)
 # =============================================================================
 
 # Create MCP server
-mcp = FastMCP(
-    "Report MCP Server",
-    description="MCP server for generating reports and sending emails",
-)
+mcp = FastMCP("Report MCP Server")
 
 # MCP Tools
 @mcp.tool()
