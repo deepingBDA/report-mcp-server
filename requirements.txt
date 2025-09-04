@@ -23,3 +23,7 @@ numpy>=1.24.0
 # Scheduler and HTTP client
 APScheduler>=3.10.0
 httpx>=0.24.0
+
+# PDF generation
+playwright>=1.40.0
+Pillow>=10.0.0
