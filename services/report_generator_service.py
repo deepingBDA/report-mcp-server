@@ -44,8 +44,8 @@ class ReportGeneratorService:
     ) -> Dict[str, Any]:
         """Generate summary report."""
         try:
+            logger.info("📊 Using modular summary report generator")
             from report_generators.summary_report import SummaryReportGenerator
-            
             generator = SummaryReportGenerator()
             
             # Generate the report
