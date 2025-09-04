@@ -129,7 +129,7 @@ class AWSSESService:
                 temp_html_path = temp_html.name
             
             # Convert HTML to PDF using CSS page size method
-            pdf_path = convert_html_to_pdf_css_size(temp_html_path)
+            pdf_path = await convert_html_to_pdf_css_size(temp_html_path)
             
             # Clean up temporary HTML file
             os.unlink(temp_html_path)

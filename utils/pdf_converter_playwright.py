@@ -11,6 +11,7 @@ from typing import Optional, Dict, Any
 import tempfile
 
 try:
+    from playwright.async_api import async_playwright
     from playwright.sync_api import sync_playwright
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
@@ -33,7 +34,7 @@ class PlaywrightPDFConverter:
         
         logger.info("Playwright PDF converter initialized successfully")
     
-    def html_file_to_pdf_css_size(
+    async def html_file_to_pdf_css_size(
         self,
         html_file_path: str,
         output_pdf_path: Optional[str] = None,
@@ -66,16 +67,16 @@ class PlaywrightPDFConverter:
         try:
             logger.info(f"Converting HTML to PDF using CSS page size: {html_file_path} -> {output_pdf_path}")
             
-            with sync_playwright() as playwright:
-                browser = playwright.chromium.launch(headless=True)
-                page = browser.new_page()
+            async with async_playwright() as playwright:
+                browser = await playwright.chromium.launch(headless=True)
+                page = await browser.new_page()
                 
                 # Navigate to HTML file
-                page.goto(f"file://{html_path.absolute()}")
-                page.wait_for_load_state('networkidle')
+                await page.goto(f"file://{html_path.absolute()}")
+                await page.wait_for_load_state('networkidle')
                 
                 # Get content dimensions
-                content_info = page.evaluate('''
+                content_info = await page.evaluate('''
                     () => {
                         const body = document.body;
                         return {
@@ -90,7 +91,7 @@ class PlaywrightPDFConverter:
                 logger.info(f"Content dimensions: {content_info['scrollWidth']}x{content_info['scrollHeight']}px")
                 
                 # Inject CSS to set exact page size
-                page.add_style_tag(content=f'''
+                await page.add_style_tag(content=f'''
                     @page {{
                         size: {content_info['scrollWidth']}px {content_info['scrollHeight']}px;
                         margin: 0;
@@ -110,7 +111,7 @@ class PlaywrightPDFConverter:
                 ''')
                 
                 # Wait for CSS to apply
-                page.wait_for_timeout(500)
+                await page.wait_for_timeout(500)
                 
                 # Default options
                 default_options = {
@@ -125,12 +126,12 @@ class PlaywrightPDFConverter:
                     default_options.update(options)
                 
                 # Generate PDF with CSS page size
-                page.pdf(
+                await page.pdf(
                     path=str(output_pdf_path),
                     **default_options
                 )
                 
-                browser.close()
+                await browser.close()
             
             logger.info(f"PDF generated successfully with CSS page size: {output_pdf_path}")
             return str(output_pdf_path)
@@ -317,7 +318,7 @@ class PlaywrightPDFConverter:
             raise
 
 
-def convert_html_to_pdf_css_size(
+async def convert_html_to_pdf_css_size(
     html_file_path: str,
     output_pdf_path: Optional[str] = None,
     options: Optional[Dict[str, Any]] = None
@@ -334,7 +335,7 @@ def convert_html_to_pdf_css_size(
         Path to the generated PDF file
     """
     converter = PlaywrightPDFConverter()
-    return converter.html_file_to_pdf_css_size(html_file_path, output_pdf_path, options)
+    return await converter.html_file_to_pdf_css_size(html_file_path, output_pdf_path, options)
 
 
 def convert_html_to_pdf_playwright(
