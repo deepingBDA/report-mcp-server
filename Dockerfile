@@ -1,5 +1,6 @@
-# Multi-stage build for better caching
-FROM python:3.11-slim as base
+FROM python:3.11-slim
+
+WORKDIR /app
 
 # Install system dependencies and fonts
 RUN apt-get update && apt-get install -y \
@@ -12,22 +13,12 @@ RUN apt-get update && apt-get install -y \
     && fc-cache -fv \
     && rm -rf /var/lib/apt/lists/*
 
-# Python dependencies stage
-FROM base as python-deps
-WORKDIR /app
+# Copy requirements first for better caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Playwright stage (this takes the longest)
-FROM python-deps as playwright-stage
-RUN playwright install chromium \
-    && playwright install-deps chromium \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/*
-
-# Final stage
-FROM playwright-stage
-WORKDIR /app
+# Install Playwright browsers
+RUN playwright install --with-deps chromium
 
 # Copy application code
 COPY . .
